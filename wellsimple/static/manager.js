@@ -31,7 +31,7 @@ function renderOverviewCharts() {
   S.charts.push(new Chart(document.getElementById('chartMonthly'), {
     data: { labels: m.map(r => r.month), datasets: [
       { type: 'bar', label: 'Lost oil (m³)', data: m.map(r => r.lost_oil_m3), backgroundColor: '#c2410c99', yAxisID: 'y' },
-      { type: 'line', label: 'Repair jobs', data: m.map(r => r.repair_jobs), borderColor: '#0b6e4f', pointRadius: 0, yAxisID: 'y2' }] },
+      { type: 'line', label: 'Repair jobs performed (rod truck + workover)', data: m.map(r => r.repair_jobs), borderColor: '#0b6e4f', pointRadius: 0, yAxisID: 'y2' }] },
     options: { responsive: true, scales: { y: { title: { display: true, text: 'm³' } }, y2: { position: 'right', grid: { drawOnChartArea: false } },
       x: { ticks: { maxTicksLimit: 8 } } } } }));
   const codes = Object.entries(S.overview.lost_by_code);
