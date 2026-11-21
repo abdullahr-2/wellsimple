@@ -1,0 +1,21 @@
+# Competition data must never be committed or shared
+data/
+*.parquet
+*.pkl
+*.zip
+Competition Dataset*/
+
+# Secrets
+.env
+*.key
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.ipynb_checkpoints/
+.pytest_cache/
+
+# App state created at runtime
+*.sqlite
+*.db
