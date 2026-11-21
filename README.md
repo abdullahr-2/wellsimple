@@ -173,6 +173,10 @@ $env:WORK_DIR = "C:\path\to\artifacts"        # optional, default ./artifacts (g
 export DATA_DIR="/path/to/Competition Dataset"
 ```
 
+**Easiest on Windows:** `.\run_demo.ps1 -DataDir "C:\path\to\Competition Dataset"` does steps 1 to 3 for you
+(it builds what is missing, starts the app and opens the browser). If `localhost` does not load, the app is
+not running: keep that window open, and try `http://127.0.0.1:8000/` instead.
+
 1. Score the wells and build the tables the portals read (about 1 to 2 minutes):
    `python scripts/build_artifacts.py`, then enroll the A/B pilot: `python scripts/build_pilot.py`
 2. Start the app (loads in about 30 seconds):
