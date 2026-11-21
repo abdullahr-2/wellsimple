@@ -15,32 +15,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import numpy as np
 import pandas as pd
-from scipy import stats
 
 from wellsimple import data, reliability
-
-SIMS = 600
-ALPHA = 0.05
-
-
-def well_repeat_counts(rep: pd.DataFrame, producing: set[str], end: pd.Timestamp, years_back: int = 0) -> pd.Series:
-    """Repeat-within-30-day repair jobs per producing well in one 365-day window
-    (`years_back` = 0 is the final 365 days, 1 is the 365 days before that)."""
-    r = rep.sort_values(["uwi", "start_date"]).copy()
-    r["gap"] = r.groupby("uwi")["start_date"].diff().dt.days
-    hi = end - pd.Timedelta(days=365 * years_back)
-    win = r[(r["start_date"] > hi - pd.Timedelta(days=365)) & (r["start_date"] <= hi) & (r["gap"] > 0) & (r["gap"] <= 30)]
-    return win.groupby("uwi").size().reindex(sorted(producing), fill_value=0)
-
-
-def power(counts: np.ndarray, n_per_arm: int, effect: float, rng) -> float:
-    """Share of simulated trials in which the treated arm is detected as lower (two-sided Welch test)."""
-    hits = 0
-    for _ in range(SIMS):
-        control = rng.choice(counts, n_per_arm)
-        treated = rng.binomial(rng.choice(counts, n_per_arm), 1 - effect)  # thin repeats by `effect`
-        hits += stats.ttest_ind(treated, control, equal_var=False).pvalue < ALPHA and treated.mean() < control.mean()
-    return hits / SIMS
+from wellsimple.abtest import power, well_repeat_counts
 
 
 def main():

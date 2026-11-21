@@ -27,6 +27,7 @@
     <button class="tab" role="tab" data-tab="wells" aria-selected="false">At-risk wells</button>
     <button class="tab" role="tab" data-tab="assigned" aria-selected="false">Assigned</button>
     <button class="tab" role="tab" data-tab="resolved" aria-selected="false">Resolved</button>
+    <button class="tab" role="tab" data-tab="pilot" aria-selected="false">A/B pilot</button>
   </div>
 
   <section id="tab-overview">
@@ -64,6 +65,7 @@
   </section>
 
   <section id="tab-assigned" class="hidden"><div class="card" style="overflow-x:auto"><table id="assignedTable"></table></div></section>
+  <section id="tab-pilot" class="hidden"><div class="card" id="pilot"></div></section>
   <section id="tab-resolved" class="hidden"><div class="card" style="overflow-x:auto"><table id="resolvedTable"></table></div></section>
 </main>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

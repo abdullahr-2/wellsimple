@@ -23,7 +23,7 @@ the crew logs.
 | Repair spend within 30 days of a previous repair (measured) | 34% of repair jobs, about $13.9M a year (38% of repair spend) | `reliability.repeat_spend` |
 | Repair spend within 90 days of a previous repair (measured) | 60% of repair jobs, about $20.1M a year (55% of repair spend) | `reliability.repeat_spend` |
 
-**We do not claim a measured saving, and that is a strength.** We tested where a saving could come from
+**We do not claim a measured saving, and that is a strength. We built the experiment that measures it.** We tested where a saving could come from
 (`scripts/eval_savings_levers.py`): dispatch order has nothing to save (93.7% of failures are repaired the
 same day), the cheap rod fix already has the lowest cost per day of life, and pump-make differences appear
 between wells but not reliably within a well. The honest deliverable is the implementation plan: a
@@ -49,7 +49,7 @@ an illustration, and that a field trial would measure the real figure.
 5. **How it works (1:30).** Three parts: risk model, Well Memory (retrieval over crew notes, no
    generative model), sensors-to-notes model. One slide of test results with held-out numbers.
 6. **Money, the pilot and honesty (1:30).** Show exposure vs the measured repeat pool. Say we looked for a
-   measurable saving in three places and found two empty and one unconfirmed. Then the pilot design table. Exposure range and the assumptions. Then limitations: the 22-month
+   measurable saving in three places and found two empty and one unconfirmed. Then the A/B pilot tab: 370 repeat-prone wells randomized into 186 system and 184 control, balanced at the start, pre-specified analysis, and a test that was validated on real history (4.0% false positives with no intervention). Be explicit that no result exists yet and that we will not simulate one. Exposure range and the assumptions. Then limitations: the 22-month
    failure log, moderate cross-modal accuracy, planned work in the label.
 7. **Next steps (0:30).** Follow-up "did the fix hold?" prompts, Canary Historian live feed, trial on
    one field.
@@ -73,6 +73,11 @@ demo screens, not slides, for minutes 2 to 4. State AI use in the last 10 second
 - **Is the early hazard just follow-up visits?** Some of it may be. The next job can be a planned return
   trip. Tell them we flag this caveat on the slide, and that separating planned from unplanned follow-ups
   is the first refinement.
+- **Why not just simulate the trial?** A simulated outcome would be made-up data presented as a result. We
+  only simulate to size the trial and to validate the test (A/A check on real history), and we say so.
+- **Did you use outside data?** No external dataset in any model. We searched for a published effect size
+  and found no controlled trial; the closest is a JPT report of a root-cause program cutting PCP failure
+  frequency by more than 50%, which we treat as an optimistic upper reference. It is disclosed in the README.
 - **So what will it save?** We can't measure that from history because nothing in the data is an
   intervention. We tested three levers and report what held and what did not. The measured pool is $13.9M a
   year of repeat-repair spend; each 10% prevented is about $1.4M a year. A 12-month pilot on 100 to 150

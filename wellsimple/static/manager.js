@@ -119,12 +119,12 @@ const RESOLVED_COLS = [['Well', r => r.well_name || r.uwi], ['Crew', (r, n) => n
 
 async function refresh() {
   await loadAll();
-  await Promise.all([loadWells(), loadAssignments('assigned', 'assignedTable', ASSIGNED_COLS), loadAssignments('resolved', 'resolvedTable', RESOLVED_COLS)]);
+  await Promise.all([loadPilot(), loadWells(), loadAssignments('assigned', 'assignedTable', ASSIGNED_COLS), loadAssignments('resolved', 'resolvedTable', RESOLVED_COLS)]);
 }
 
 document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => {
   document.querySelectorAll('.tab').forEach(x => x.setAttribute('aria-selected', x === b));
-  ['overview', 'wells', 'assigned', 'resolved'].forEach(t => document.getElementById('tab-' + t).classList.toggle('hidden', t !== b.dataset.tab));
+  ['overview', 'wells', 'assigned', 'resolved', 'pilot'].forEach(t => document.getElementById('tab-' + t).classList.toggle('hidden', t !== b.dataset.tab));
   if (b.dataset.tab === 'wells' && S.map) fitMap();
 }));
 ['sort', 'origin', 'minrisk'].forEach(id => document.getElementById(id).addEventListener('change', loadWells));
@@ -154,3 +154,37 @@ function renderReliability() {
     data: { labels: h.map(x => x.from + '–' + (x.to >= 5000 ? '+' : x.to) + ' d'), datasets: [{ label: 'Chance per day of another repair (rod-truck jobs)', data: h.map(x => x.hazard_per_day * 100), backgroundColor: '#c2410c99' }] },
     options: { maintainAspectRatio: false, plugins: { legend: { display: true } }, scales: { y: { title: { display: true, text: '% per day' } }, x: { title: { display: true, text: 'Days since the last repair' } } } } }));
 }
+
+async function loadPilot() {
+  const box = document.getElementById('pilot');
+  let p;
+  try { p = await api('/api/pilot'); } catch (e) { box.replaceChildren(el('div', { class: 'empty', text: 'No pilot built yet. Run scripts/build_pilot.py.' })); return; }
+  const th = (...t) => el('tr', {}, ...t.map(x => el('th', { text: x })));
+  const row = (...c) => el('tr', {}, ...c.map(x => el('td', { text: x })));
+  const smd = v => (v > 0 ? '+' : '') + v.toFixed(2);
+  const pw = p.power.by_effect_percent;
+  box.replaceChildren(
+    el('h3', { style: 'margin-top:0', text: 'A/B pilot: how we will measure the saving' }),
+    el('div', { class: 'banner', text: 'Status: ' + p.status + '. Enrolled on ' + p.enrolled_as_of + '; first read ' + p.earliest_read + '. ' + p.outcome_note }),
+    pilotLine('Who', p.population),
+    pilotLine('System arm (' + p.n_system + ' wells)', p.arms.system),
+    pilotLine('Control arm (' + p.n_control + ' wells)', p.arms.control + (p.pilot_mode ? ' (hidden from this manager view while the pilot runs)' : '')),
+    pilotLine('Assignment', 'random within field and baseline-repeat strata, seed ' + p.seed + ', fixed before any outcome'),
+    pilotLine('Primary outcome', p.primary_outcome),
+    pilotLine('Analysis', p.analysis),
+    el('h4', { text: 'Are the arms comparable at the start? (standardized difference; within ±0.1 is balanced)' }),
+    el('table', {}, th('Baseline measure', 'System mean', 'Control mean', 'Difference'),
+      ...p.balance.map(b => row(b.measure.replaceAll('_', ' '), num(b.system, 2), num(b.control, 2), smd(b.smd)))),
+    el('h4', { text: 'Does the test invent effects? A/A check on real history' }),
+    el('p', { class: 'small', text: p.aa_check.wells + ' real repeat-prone wells were randomized ' + p.aa_check.trials + ' times with no intervention. The test wrongly reported a difference ' +
+      pct(p.aa_check.false_positive_rate) + ' of the time (95% interval ' + pct(p.aa_check.ci_low) + ' to ' + pct(p.aa_check.ci_high) + '). About 5% is correct.' }),
+    el('h4', { text: 'How big an effect can it detect? (' + p.power.wells_per_arm + ' wells per arm, 12 months)' }),
+    el('table', {}, th('If the system cuts repeat repairs by', 'Chance the pilot detects it'),
+      ...Object.entries(pw).map(([k, v]) => row(k + '%', pct(v)))),
+    el('p', { class: 'small', text: 'Smallest effect detected with 80% power: ' + (p.power.min_detectable_effect_80pct == null ? 'none in the tested range' : Math.round(p.power.min_detectable_effect_80pct * 100) + '%') +
+      '. Smaller effects need a longer pilot or more wells.' }),
+    el('p', { class: 'small muted', text: p.effect_size_reference }),
+    el('h4', { text: 'Result' }),
+    el('div', { class: 'empty', text: 'Not available yet. We do not report a saving until follow-up data exists.' }));
+}
+function pilotLine(label, text) { return el('p', { class: 'small', style: 'margin:4px 0' }, el('b', { text: label + ': ' }), text); }

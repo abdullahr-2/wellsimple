@@ -6,6 +6,7 @@ their identity from a list. A real deployment would put both behind company SSO.
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Literal
 
@@ -60,7 +61,8 @@ def _rows(df: pd.DataFrame) -> list[dict]:
 
 
 def create_app(wells: pd.DataFrame, overview: dict, memory: notes.WellMemory,
-               store: store_mod.Store) -> FastAPI:
+               store: store_mod.Store, pilot: dict | None = None, pilot_wells: pd.DataFrame | None = None,
+               hide_control: bool = False) -> FastAPI:
     app = FastAPI(title="WellSimple")
     wells = wells.copy().reset_index(drop=True)
     by_uwi = {u: i for i, u in enumerate(wells["uwi"])}
@@ -87,6 +89,8 @@ def create_app(wells: pd.DataFrame, overview: dict, memory: notes.WellMemory,
                    include_assigned: bool = False):
         df = wells[wells["p_repair"] >= min_risk].copy()
         hidden = store.resolved_uwis() | (set() if include_assigned else store.open_uwis())
+        if hide_control and pilot_wells is not None:  # pilot mode: control wells are not surfaced (usual practice)
+            hidden |= set(pilot_wells.loc[pilot_wells["arm"] == "control", "uwi"])
         df = df[~df["uwi"].isin(hidden)]
         lat0, lon0, label = origin(crew_id)
         df["distance_km"] = geo.haversine_km(lat0, lon0, df["surface_latitude"], df["surface_longitude"])
@@ -117,6 +121,18 @@ def create_app(wells: pd.DataFrame, overview: dict, memory: notes.WellMemory,
                        "notes": json.loads(w["autopsy_notes"])}
         return {"well": d, "query": query[:500], "precedents": precedents, "autopsy": autopsy,
                 "summary": notes.summarize(memory.search(query, k=10, exclude_uwi=uwi)) if query else None}
+
+    @app.get("/api/pilot")
+    def get_pilot():
+        if pilot is None:
+            raise HTTPException(404, "no pilot has been built")
+        sample = []
+        if pilot_wells is not None:
+            top = pilot_wells.sort_values("baseline_repeats", ascending=False).head(40)
+            sample = _rows(top[["uwi", "well_name", "field", "arm", "baseline_repeats"]])
+        return {**pilot, "pilot_mode": hide_control, "enrolled_wells": sample, "outcome": None,
+                "outcome_note": "No follow-up data after enrollment yet (the dataset ends on enrollment day), "
+                                "so no effect is reported. The result appears here after the first read date."}
 
     @app.get("/api/crews")
     def crews():
@@ -192,4 +208,10 @@ def load_app() -> FastAPI:
     rep = data.add_job_outcomes(data.load_jobs())
     memory = notes.WellMemory(notes.TfidfEncoder()).build(rep)
     config.WORK_DIR.mkdir(parents=True, exist_ok=True)
-    return create_app(wells, overview, memory, store_mod.Store(config.WORK_DIR / "state.sqlite"))
+    pilot = pilot_wells = None
+    if (config.WORK_DIR / "pilot.json").exists():
+        pilot = json.loads((config.WORK_DIR / "pilot.json").read_text())
+        pilot_wells = pd.read_parquet(config.WORK_DIR / "pilot.parquet")
+    # PILOT_MODE=1 hides control-arm wells from the manager list, which is what makes it a real experiment
+    return create_app(wells, overview, memory, store_mod.Store(config.WORK_DIR / "state.sqlite"),
+                      pilot, pilot_wells, hide_control=os.environ.get("PILOT_MODE") == "1")

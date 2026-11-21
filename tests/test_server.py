@@ -103,3 +103,16 @@ def test_detail_includes_sensor_based_autopsy(client):
     assert d["autopsy"]["p"] == {"Pump": 0.6, "Rods": 0.3, "Tubing": 0.1}
     assert d["autopsy"]["notes"][0]["text"] == "broken rotor"
     assert "autopsy_notes" not in d["well"]
+
+
+def test_pilot_endpoint_and_control_wells_hidden_only_in_pilot_mode():
+    plan = {"status": "awaiting follow-up", "n_system": 1, "n_control": 1}
+    pw = pd.DataFrame({"uwi": ["w1", "w2"], "well_name": ["One", "Two"], "field": ["F", "F"],
+                       "arm": ["system", "control"], "baseline_repeats": [2, 1]})
+    normal = TestClient(server.create_app(_wells(), {}, _memory(), store_mod.Store(), plan, pw))
+    assert normal.get("/api/pilot").json()["outcome"] is None          # never invents an effect
+    assert "No follow-up" in normal.get("/api/pilot").json()["outcome_note"]
+    assert "w2" in uwis(normal.get("/api/wells"))                       # off by default: nothing hidden
+    piloting = TestClient(server.create_app(_wells(), {}, _memory(), store_mod.Store(), plan, pw, hide_control=True))
+    assert "w2" not in uwis(piloting.get("/api/wells")) and "w1" in uwis(piloting.get("/api/wells"))
+    assert TestClient(server.create_app(_wells(), {}, _memory(), store_mod.Store())).get("/api/pilot").status_code == 404

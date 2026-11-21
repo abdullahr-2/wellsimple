@@ -88,6 +88,36 @@ So: a 12-month pilot on about 100 to 150 repeat-prone wells per arm can reliably
 Smaller effects need a longer trial or a within-well crossover. Each 10% of the measured $13.9M a year
 repeat pool is about $1.4M a year (field-estimated repair spend, before oil).
 
+## The A/B pilot (built, enrolled, awaiting follow-up)
+
+Savings are measured by an experiment, so we built one. `python scripts/build_pilot.py` enrolls and
+randomizes real wells, and the manager portal's **A/B pilot** tab shows the plan and status.
+
+- **Population:** the 370 producing wells that had at least one repeat repair in the last 12 months
+  (a repair job within 30 days of the previous one on the same well).
+- **Arms:** 186 "system" wells (the portal recommends and tracks action) and 184 "control" wells (usual
+  practice). Assignment is random within field and baseline-repeat strata with a fixed seed (2026).
+  Setting `PILOT_MODE=1` hides control wells from the manager list so the experiment is not contaminated.
+- **Balance:** the arms match at enrollment on baseline repeats (standardized difference -0.09), prior-year
+  repeats (-0.10), repairs in 12 months (-0.03) and oil rate (+0.04).
+- **Pre-specified analysis:** primary outcome is repeat repairs per well over 12 months; rate ratio with a
+  permutation p-value and a bootstrap interval; one read at 12 months, no peeking.
+- **The test is validated on real history (A/A check):** randomizing 404 real repeat-prone wells 200 times
+  with no intervention, the analysis wrongly reported a difference 4.0% of the time (95% interval 1.3% to
+  6.7%), which is the expected 5%. So it does not invent effects. Unit tests also confirm it detects and
+  brackets a known 50% effect.
+- **Power at 184 wells per arm:** 22% for a 20% cut, 50% for a 30% cut, 96% for a 50% cut; the smallest
+  effect with 80% power is 50%. Smaller effects need a longer pilot or more wells.
+- **Result: none yet, and none is reported.** The dataset ends on the enrollment day, so there is no
+  follow-up. The first read is due 12 months after enrollment (2027-10-26). We do not simulate an outcome.
+
+**Outside data.** Public supplementary data is allowed (the Research Topic Guide lists some), as long as it is
+disclosed. We searched for a published effect size for surveillance systems and found no controlled trial.
+The closest benchmark is a [JPT article](https://jpt.spe.org/applying-root-cause-failure-analysis-enhances-artificial-lift-performance)
+reporting that a root-cause failure analysis program cut PCP failure frequency by more than 50%. That is
+trade press, not a controlled trial (we read only the search summary), so we treat 50% as an optimistic upper
+reference and size the pilot to be honest about smaller effects. No external dataset is used in any model.
+
 ## Limitations (stated up front)
 
 - The failure log covers about 22 months (2025 to 2026) even though the handbook range is longer.
@@ -121,7 +151,7 @@ export DATA_DIR="/path/to/Competition Dataset"
 ```
 
 1. Score the wells and build the tables the portals read (about 1 to 2 minutes):
-   `python scripts/build_artifacts.py`
+   `python scripts/build_artifacts.py`, then enroll the A/B pilot: `python scripts/build_pilot.py`
 2. Start the app (loads in about 30 seconds):
    `python -m uvicorn wellsimple.server:load_app --factory --port 8000`
 3. Open the manager portal at <http://localhost:8000/> and the crew portal at
@@ -148,12 +178,14 @@ demo inputs, not field records.
   age-replacement test (Barlow-Proschan) and a job-type cost Pareto.
 - `wellsimple/levers.py`: tests of candidate savings sources (pump-make rate ratios with field and
   well controls, cluster bootstrap intervals). `scripts/trial_power.py`: data-calibrated trial design.
+- `wellsimple/abtest.py`: pilot enrollment, stratified randomization, balance check, the pre-specified analysis
+  (rate ratio, permutation test, bootstrap), the A/A false-positive check and power.
 - `wellsimple/scoring.py`: expected dollar loss per well and rank-based reasons.
 - `wellsimple/server.py`, `wellsimple/static/`: FastAPI app with the manager and crew portals.
 
 **Validation**: all splits are time-ordered; the retrieval tests exclude the failing well, and the
 cross-modal test also excludes the failing well's field; history and label logic has unit tests
-(`python -m pytest`, 31 tests, including recovery of known Weibull and rate-ratio parameters and a test that field controls remove a false make effect). Both portals were exercised in a headless browser.
+(`python -m pytest`, 36 tests, including recovery of known Weibull and rate-ratio parameters, a test that field controls remove a false make effect, an A/A false-positive test and detection of a known effect in the A/B analysis). Both portals were exercised in a headless browser.
 
 **External resources**: Strathcona Resources Q3 2026 results release (price and cost assumptions),
 OpenStreetMap tiles, Leaflet 1.9.4 and Chart.js 4.4.1 (loaded from CDNs).
