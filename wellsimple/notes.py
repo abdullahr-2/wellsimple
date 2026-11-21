@@ -80,6 +80,17 @@ class WellMemory:
         self.vecs = self.encoder.encode(j["text"].tolist()).astype("float32")
         return self
 
+    def add_job(self, uwi: str, text: str, cost: float | None = None,
+                start_date: pd.Timestamp | None = None) -> None:
+        """Add a freshly submitted crew note to the memory. Its outcome is unknown
+        until the next job on the well (or a 'did it hold?' follow-up) arrives."""
+        row = {c: np.nan for c in self.jobs.columns}
+        row.update(uwi=uwi, text=text.lower(), cost=cost if cost is not None else np.nan,
+                   start_date=start_date or pd.Timestamp.now().normalize(),
+                   life_days=np.nan, censored=True)
+        self.jobs = pd.concat([self.jobs, pd.DataFrame([row])], ignore_index=True)
+        self.vecs = np.vstack([self.vecs, self.encoder.encode([text.lower()]).astype("float32")])
+
     def search(
         self,
         query: str,
