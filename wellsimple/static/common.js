@@ -12,6 +12,7 @@ function el(tag, props, ...kids) {
   return e;
 }
 const money = (v) => v == null ? '–' : '$' + Math.round(v).toLocaleString('en-CA');
+const moneyM = (v) => v == null ? '–' : '$' + (v / 1e6).toFixed(1) + 'M';  // rounded: inputs are field estimates
 const pct = (v) => v == null ? '–' : Math.round(v * 100) + '%';
 const num = (v, d = 0) => v == null ? '–' : Number(v).toLocaleString('en-CA', { maximumFractionDigits: d });
 async function api(path, opts) {

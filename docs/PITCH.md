@@ -35,6 +35,14 @@ it money to be made. The measured pool is the repeat-repair spend (about $13.9M 
 it is a ceiling, not a saving. Say "if better repairs removed 10% of it, that is about $1.4M a year" as
 an illustration, and that a field trial would measure the real figure.
 
+## The sentence to use for the money claim
+
+"Based on Strathcona's own data and our pilot design, better repairs could potentially save between about
+$1.7M and $9.1M a year, depending on how many repeat repairs they prevent. The measured pool behind that is
+$13.9M a year of repair spend plus about $2.6M of lost oil. The A/B pilot is built to measure the real number."
+
+Keep the word "potentially" and the "depending on" clause. Do not say "will save" or give a single figure.
+
 ## 10-minute finalist talk
 
 1. **The problem (1:00).** Heavy oil wells, every one on a pump. 61% of repairs repeat within 90 days.

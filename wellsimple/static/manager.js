@@ -9,7 +9,7 @@ async function loadAll() {
   const origin = document.getElementById('origin');
   origin.replaceChildren(el('option', { value: '', text: 'Fleet centre' }),
     ...crews.map(c => el('option', { value: c.id, text: c.name + (c.lat != null ? ' (located)' : ' (no location yet)') })));
-  renderKpis(); renderOverviewCharts(); renderReliability();
+  renderKpis(); renderOverviewCharts(); renderPotential(); renderReliability();
 }
 
 function renderKpis() {
@@ -188,3 +188,20 @@ async function loadPilot() {
     el('div', { class: 'empty', text: 'Not available yet. We do not report a saving until follow-up data exists.' }));
 }
 function pilotLine(label, text) { return el('p', { class: 'small', style: 'margin:4px 0' }, el('b', { text: label + ': ' }), text); }
+
+// Potential saving: the measured repeat-repair pool times a range of possible reductions.
+// Wording is deliberate: "could potentially save", never "will save". The A/B pilot measures the real figure.
+function renderPotential() {
+  const o = S.overview, box = document.getElementById('potential');
+  const r = o.reliability && o.reliability.repeat_spend && o.reliability.repeat_spend[0];
+  if (!r) { box.replaceChildren(); return; }
+  const jobsPerYear = r.jobs * r.cost_per_year / r.cost;
+  const oilPerYear = jobsPerYear * o.lost_m3_per_event * 6.2898 * o.netback_scenarios.low;
+  const rows = [[0.10, ''], [0.30, ''], [0.50, 'smallest effect the pilot can reliably detect'], [0.55, 'published before/after benchmark (Chad PCP program)']];
+  box.replaceChildren(
+    el('h3', { style: 'margin-top:0', text: 'Potential saving (not measured)' }),
+    el('p', { text: 'About ' + moneyM(r.cost_per_year) + ' a year of repair spend, plus about ' + moneyM(oilPerYear) + ' of lost oil (conservative price), comes from repair jobs that start within 30 days of a previous repair on the same well. If better repairs cut those repeats, Strathcona could potentially save:' }),
+    el('table', {}, el('tr', {}, ...['If repeat repairs fall by', 'Could potentially save per year', 'Basis'].map(t => el('th', { text: t }))),
+      ...rows.map(([f, why]) => el('tr', {}, el('td', { text: Math.round(f * 100) + '%' }), el('td', { text: moneyM((r.cost_per_year + oilPerYear) * f) }), el('td', { class: 'muted', text: why })))),
+    el('p', { class: 'small muted', text: 'Based on the measured repeat-repair spend (field cost estimates) and the stated scenarios. It is a ceiling-based potential, not a measured saving: some repeats are planned follow-ups, and the 55% figure comes from one uncontrolled published case. The A/B pilot is designed to measure the real number.' }));
+}
