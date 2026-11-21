@@ -1,4 +1,4 @@
-const S = { overview: null, crews: [], wells: [], map: null, markers: null, charts: [] };
+const S = { overview: null, crews: [], wells: [], map: null, markers: null, charts: [], pts: [] };
 const scenario = () => document.getElementById('scenario').value;
 const lossKey = () => 'expected_loss_' + scenario();
 
@@ -41,14 +41,14 @@ function renderOverviewCharts() {
 }
 
 async function loadWells() {
-  const q = new URLSearchParams({ sort: document.getElementById('sort').value, min_risk: document.getElementById('minrisk').value, limit: 40 });
+  const q = new URLSearchParams({ sort: document.getElementById('sort').value, min_risk: document.getElementById('minrisk').value, limit: 30 });
   const crew = document.getElementById('origin').value; if (crew) q.set('crew_id', crew);
   const r = await api('/api/wells?' + q);
   S.wells = r.wells;
   const t = document.getElementById('wellsTable');
   const head = el('tr', {}, ...['Well', 'Risk', 'Expected loss', 'Why flagged', 'km', 'Assign'].map(h => el('th', { text: h })));
   const rows = r.wells.map(w => {
-    const sel = el('select', { 'aria-label': 'Assign crew' }, ...S.crews.map(c => el('option', { value: c.id, text: c.name })));
+    const sel = el('select', { 'aria-label': 'Assign crew', style: 'width:92px;padding:6px' }, ...S.crews.map(c => el('option', { value: c.id, text: c.name })));
     sel.addEventListener('click', e => e.stopPropagation());
     const btn = el('button', { class: 'ghost', text: 'Assign', onclick: async (e) => {
       e.stopPropagation(); btn.disabled = true;
@@ -60,7 +60,7 @@ async function loadWells() {
       el('td', { text: money(w[lossKey()]) }),
       el('td', {}, ...(w.reasons ? w.reasons.split('; ').map(x => el('span', { class: 'tag', text: x })) : [el('span', { class: 'muted small', text: 'general risk' })])),
       el('td', { text: num(w.distance_km) }),
-      el('td', {}, el('div', { class: 'row' }, sel, btn)));
+      el('td', { style: 'white-space:nowrap' }, sel, ' ', btn));
   });
   t.replaceChildren(head, ...rows);
   if (!rows.length) t.replaceChildren(el('tr', {}, el('td', { class: 'empty', text: 'No wells match.' })));
@@ -78,8 +78,11 @@ function drawMap() {
       .bindTooltip((w.well_name || w.uwi) + ' · ' + pct(w.p_repair)).on('click', () => showDetail(w));
     m.addTo(S.markers); pts.push([w.surface_latitude, w.surface_longitude]);
   });
-  if (pts.length) S.map.fitBounds(pts, { padding: [30, 30], maxZoom: 11 });
-  setTimeout(() => S.map.invalidateSize(), 50);
+  S.pts = pts; fitMap();
+}
+function fitMap() {
+  // the map may have been created while its tab was hidden, so re-measure before fitting
+  setTimeout(() => { S.map.invalidateSize(); if (S.pts.length) S.map.fitBounds(S.pts, { padding: [30, 30], maxZoom: 11 }); }, 60);
 }
 
 async function showDetail(w) {
@@ -122,7 +125,7 @@ async function refresh() {
 document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => {
   document.querySelectorAll('.tab').forEach(x => x.setAttribute('aria-selected', x === b));
   ['overview', 'wells', 'assigned', 'resolved'].forEach(t => document.getElementById('tab-' + t).classList.toggle('hidden', t !== b.dataset.tab));
-  if (b.dataset.tab === 'wells' && S.map) setTimeout(() => S.map.invalidateSize(), 50);
+  if (b.dataset.tab === 'wells' && S.map) fitMap();
 }));
 ['sort', 'origin', 'minrisk'].forEach(id => document.getElementById(id).addEventListener('change', loadWells));
 document.getElementById('scenario').addEventListener('change', () => { renderKpis(); loadWells(); loadAssignments('assigned', 'assignedTable', ASSIGNED_COLS); });

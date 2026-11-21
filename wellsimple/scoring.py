@@ -24,7 +24,7 @@ REASON_LABELS = {
     "casing_pressure_kpa_m30": ("High casing pressure", 1),
     "tubing_pressure_kpa_m30": ("High tubing pressure", 1),
     "water_cut_m30": ("High water cut", 1),
-    "oil_produced_m3_d": ("Oil rate dropping", -1),
+    "oil_produced_m3_d": ("Oil rate down vs 30-day average", -1),
     "hours_down_m7": ("Recent downtime", 1),
     "repairs_90d": ("Repaired recently (repeat risk)", 1),
     "repairs_365d": ("Frequent repairs this year", 1),
