@@ -9,7 +9,7 @@ async function loadAll() {
   const origin = document.getElementById('origin');
   origin.replaceChildren(el('option', { value: '', text: 'Fleet centre' }),
     ...crews.map(c => el('option', { value: c.id, text: c.name + (c.lat != null ? ' (located)' : ' (no location yet)') })));
-  renderKpis(); renderOverviewCharts();
+  renderKpis(); renderOverviewCharts(); renderReliability();
 }
 
 function renderKpis() {
@@ -130,3 +130,27 @@ document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () =>
 ['sort', 'origin', 'minrisk'].forEach(id => document.getElementById(id).addEventListener('change', loadWells));
 document.getElementById('scenario').addEventListener('change', () => { renderKpis(); loadWells(); loadAssignments('assigned', 'assignedTable', ASSIGNED_COLS); });
 refresh().catch(e => { document.querySelector('main').prepend(el('div', { class: 'banner', text: 'Could not load data: ' + e.message })); });
+
+function renderReliability() {
+  const r = S.overview.reliability, box = document.getElementById('reliability');
+  if (!r) { box.replaceChildren(); return; }
+  const h = r.hazard;
+  const early = h[0].hazard_per_day, late = h[6].hazard_per_day;
+  const canvas = el('canvas');
+  const chartBox = el('div', { style: 'position:relative;height:260px' }, canvas);
+  const table = el('table', {}, el('tr', {}, ...['Job type', 'Jobs', 'Share of repair cost', 'Median cost', 'Median days it lasts', 'Repeat within 30 days'].map(t => el('th', { text: t }))),
+    ...r.pareto.map(p => el('tr', {}, el('td', { text: p.job_type }), el('td', { text: num(p.jobs) }), el('td', { text: pct(p.share_of_cost) }),
+      el('td', { text: money(p.median_cost) }), el('td', { text: num(p.median_life_days) }), el('td', { text: pct(p.repeat_30d_share) }))));
+  box.replaceChildren(
+    el('h3', { style: 'margin-top:0', text: 'Do fixes last? Risk is highest right after a repair' }),
+    el('p', { class: 'small', text: 'Fitted Weibull shape k = ' + r.shape.toFixed(2) + ' (95% CI ' + r.shape_ci[0].toFixed(2) + ' to ' + r.shape_ci[1].toFixed(2) +
+      '). Below 1 means risk falls with time since the fix: rod-truck jobs are about ' + Math.round(early / late) + '× likelier to need another visit in the first week than 6 to 12 months out. ' +
+      r.age_replacement.reason + ' The money is in doing each repair right the first time.' }),
+    chartBox,
+    el('p', { class: 'small muted', text: 'Caveat: the next job on a well can be a planned follow-up visit, not a failed fix, so some early risk is return trips.' }),
+    el('h4', { text: 'Where the repair money goes, by crew job type' }),
+    el('div', { style: 'overflow-x:auto' }, table));
+  S.charts.push(new Chart(canvas, { type: 'bar',
+    data: { labels: h.map(x => x.from + '–' + (x.to >= 5000 ? '+' : x.to) + ' d'), datasets: [{ label: 'Chance per day of another repair (rod-truck jobs)', data: h.map(x => x.hazard_per_day * 100), backgroundColor: '#c2410c99' }] },
+    options: { maintainAspectRatio: false, plugins: { legend: { display: true } }, scales: { y: { title: { display: true, text: '% per day' } }, x: { title: { display: true, text: 'Days since the last repair' } } } } }));
+}

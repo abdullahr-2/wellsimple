@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import numpy as np
 import pandas as pd
 
-from wellsimple import config, crossmodal, data, notes, risk, scoring
+from wellsimple import config, crossmodal, data, notes, reliability, risk, scoring
 
 META = ["uwi", "production_date", "well_name", "field_operating_area", "facility_name",
         "surface_latitude", "surface_longitude"]
@@ -106,6 +106,18 @@ def main():
         "netback_scenarios": scoring.NETBACK_SCENARIOS,
         "monthly": monthly.merge(rj, on="month", how="outer").fillna(0).to_dict("records"),
         "lost_by_code": by_code.round(0).to_dict(),
+    }
+    # ---- reliability: do fixes last? (Weibull on repair lifetimes, censored at the data end) ----
+    rt = reliability.survival_times(rep, daily["production_date"].max())
+    k, lam = reliability.fit_weibull(rt["t"], rt["event"])
+    lo, hi = reliability.bootstrap_shape(rt["t"], rt["event"])
+    event_cost = typical_cost + lost_per_event * scoring.M3_TO_BBL * scoring.NETBACK_SCENARIOS["low"]
+    overview["reliability"] = {
+        "shape": k, "shape_ci": [lo, hi], "scale_days": lam,
+        "shape_by_category": {c: reliability.fit_weibull(g["t"], g["event"])[0] for c, g in rt.groupby("job_category")},
+        "hazard": reliability.empirical_hazard(rt[rt["job_category"] == "Rod Truck"]["t"], rt[rt["job_category"] == "Rod Truck"]["event"]),
+        "age_replacement": reliability.optimal_age_replacement(k, lam, typical_cost, event_cost),
+        "pareto": reliability.job_type_pareto(rt).to_dict("records"),
     }
     (config.WORK_DIR / "overview.json").write_text(json.dumps(overview, indent=2, default=float))
     print(f"wrote {len(wells)} wells; expected 30-day loss ${overview['expected_loss_low']:,.0f} to ${overview['expected_loss_mid']:,.0f}")

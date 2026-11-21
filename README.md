@@ -29,6 +29,16 @@ almost six years.
 | How long will a fix last? | 2026 jobs, retrieving only earlier jobs on other wells | Error (log-days) 0.978 vs 1.150 for the global median. Rank correlation 0.376, against 0.109 for the well's own history. |
 | What will the crew find? | 2026 failures; retrieved notes scored against the real note | Lift over random notes +0.067 (95% CI 0.062 to 0.073). Restricted to notes from other fields: +0.070 (0.064 to 0.075), so it is not one field's writing style. Component AUC: pump 0.76, rods 0.76, tubing 0.69. |
 
+**Do fixes last? Not for long, and that changes the strategy.** Fitting a Weibull model to the time
+between repair jobs (right-censored at the end of the data) gives a shape of k = 0.61 (95% CI 0.60 to
+0.62; rod-truck jobs 0.66, workovers 0.71). A shape below 1 means risk is highest right after a fix
+and falls with time: rod-truck jobs are about 10 times likelier to need another visit in the first
+week (3.0% per day) than 6 to 12 months later (0.28% per day). Classic age-based replacement only
+pays when k is above 1, so scheduled replacement of running equipment would not pay here; the saving
+is in making each repair last. By crew job type, rod repairs repeat within 30 days 44% to 50% of the
+time (median fix lasts 31 to 38 days), against 14% to 20% for pump replacement (median 114 to 134 days).
+Caveat: the next job on a well can be a planned follow-up visit, so some early risk is return trips.
+
 **Money.** As of 2026-10-27 the 1,338 producing wells carry an expected 30-day cost of about
 **$2.1M (conservative) to $2.8M (mid)**: the job cost plus the oil lost, weighted by each well's
 repair probability. Assumptions: oil valued at $32.50 or $61.60 per barrel (Strathcona Q3 2026
@@ -94,12 +104,14 @@ demo inputs, not field records.
   (TF-IDF with SVD) with outcome statistics. Every answer is computed from real past jobs.
 - `wellsimple/crossmodal.py`: a random forest maps pre-failure sensor features into the crew-note
   text space and returns the nearest real notes and a likely component.
+- `wellsimple/reliability.py`: censored Weibull fit of repair lifetimes, empirical hazard, the
+  age-replacement test (Barlow-Proschan) and a job-type cost Pareto.
 - `wellsimple/scoring.py`: expected dollar loss per well and rank-based reasons.
 - `wellsimple/server.py`, `wellsimple/static/`: FastAPI app with the manager and crew portals.
 
 **Validation**: all splits are time-ordered; the retrieval tests exclude the failing well, and the
 cross-modal test also excludes the failing well's field; history and label logic has unit tests
-(`python -m pytest`, 20 tests). Both portals were exercised in a headless browser.
+(`python -m pytest`, 25 tests, including recovery of known Weibull parameters under censoring). Both portals were exercised in a headless browser.
 
 **External resources**: Strathcona Resources Q3 2026 results release (price and cost assumptions),
 OpenStreetMap tiles, Leaflet 1.9.4 and Chart.js 4.4.1 (loaded from CDNs).
