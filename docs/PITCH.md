@@ -75,9 +75,12 @@ demo screens, not slides, for minutes 2 to 4. State AI use in the last 10 second
   is the first refinement.
 - **Why not just simulate the trial?** A simulated outcome would be made-up data presented as a result. We
   only simulate to size the trial and to validate the test (A/A check on real history), and we say so.
-- **Did you use outside data?** No external dataset in any model. We searched for a published effect size
-  and found no controlled trial; the closest is a JPT report of a root-cause program cutting PCP failure
-  frequency by more than 50%, which we treat as an optimistic upper reference. It is disclosed in the README.
+- **Did you use outside data? Is there any "after" evidence?** No external dataset in any model. Data from our
+  system cannot exist yet. The closest published before/after is a PCP root-cause failure program in Chad
+  (IPTC 17230, not peer reviewed): failure frequency fell from 0.47 to 0.21, about 55%, between 2007 and 2013.
+  It targeted short runs and repeat failures, the same problem we target, but it is uncontrolled, a different
+  setting and a physical teardown program. We cite it as evidence the approach can work and to size the pilot,
+  not as our saving. Disclosed in the README.
 - **So what will it save?** We can't measure that from history because nothing in the data is an
   intervention. We tested three levers and report what held and what did not. The measured pool is $13.9M a
   year of repeat-repair spend; each 10% prevented is about $1.4M a year. A 12-month pilot on 100 to 150

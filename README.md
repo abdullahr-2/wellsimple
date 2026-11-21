@@ -111,12 +111,35 @@ randomizes real wells, and the manager portal's **A/B pilot** tab shows the plan
 - **Result: none yet, and none is reported.** The dataset ends on the enrollment day, so there is no
   follow-up. The first read is due 12 months after enrollment (2027-10-26). We do not simulate an outcome.
 
-**Outside data.** Public supplementary data is allowed (the Research Topic Guide lists some), as long as it is
-disclosed. We searched for a published effect size for surveillance systems and found no controlled trial.
-The closest benchmark is a [JPT article](https://jpt.spe.org/applying-root-cause-failure-analysis-enhances-artificial-lift-performance)
-reporting that a root-cause failure analysis program cut PCP failure frequency by more than 50%. That is
-trade press, not a controlled trial (we read only the search summary), so we treat 50% as an optimistic upper
-reference and size the pilot to be honest about smaller effects. No external dataset is used in any model.
+**Outside "after" data: what exists and what it can and cannot show.** Data from our system on these wells
+cannot exist yet, because nothing has been deployed. Published before/after results from other operators do
+exist, and we looked (public supplementary data is allowed if disclosed; no external dataset feeds any model).
+The closest documented case is a [JPT report](https://jpt.spe.org/applying-root-cause-failure-analysis-enhances-artificial-lift-performance)
+(June 2014) of IPTC paper 17230 by ExxonMobil and GE authors on a field in Chad:
+
+- A root-cause failure analysis (RCFA) program: every failed unit dismantled and inspected, weekly failure
+  review meetings, and an Extended Run Life Team aimed at short runs (under 90 days) and repeat failures
+  within 365 days, which is the same problem we target.
+- PCP failures per month fell from 6 (2007, 155 wells) to 3.7 (July 2013, 210 wells). Their reported "failure
+  frequency" fell from 0.47 to 0.21, about 55% (our arithmetic). Checking the paper's four pairs, the figures
+  match failures per well per year (monthly failures x 12 / wells), which is our inference, not stated.
+- **Limits:** a before/after comparison over six years, not a controlled trial; the well population and other
+  practices changed and are not adjusted for; not peer reviewed; a different country and a physical
+  teardown program, not software. It is evidence that this kind of program can work, not an estimate of our
+  effect on Strathcona's wells. Other sources we found were weaker (a modelled 6.4% saving, a cross-industry
+  survey correlation of 36% lower unplanned downtime, and vendor claims) and are not used.
+
+**What the repeat pool would be worth under different results.** Scenarios, not measurements. Repair
+spend is 13.9M a year times the reduction; lost oil is about $2.6M a year at the conservative price times
+the reduction. Applying a reduction in all PCP failures to the 30-day repeat pool is an analogy.
+
+| If repeat repairs fall by | Repair spend | Lost oil (conservative) | About per year |
+|---|---|---|---|
+| 10% | $1.4M | $0.3M | $1.7M |
+| 20% | $2.8M | $0.5M | $3.3M |
+| 30% | $4.2M | $0.8M | $5.0M |
+| 50% (pilot's detectable size) | $6.9M | $1.3M | $8.3M |
+| 55% (Chad PCP benchmark) | $7.6M | $1.4M | $9.1M |
 
 ## Limitations (stated up front)
 

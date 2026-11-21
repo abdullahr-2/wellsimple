@@ -84,7 +84,7 @@ def main():
         "balance": bal.to_dict("records"),
         "aa_check": {**aa, "wells": int(len(hist))},
         "power": {"wells_per_arm": per_arm, "by_effect_percent": pw, "min_detectable_effect_80pct": mde},
-        "effect_size_reference": "A JPT article reports a root-cause failure analysis program cut PCP failure frequency by more than 50%. This is trade-press, not a controlled trial, so treat it as an optimistic upper reference.",
+        "effect_size_reference": "Closest published before/after: a root-cause failure analysis program on PCPs in Chad (IPTC 17230, not peer reviewed) cut failure frequency from 0.47 to 0.21, about 55%, comparing 2007 with 2013. It is uncontrolled, a different setting and a physical teardown program, so it shows such programs can work but is not an estimate of our effect.",
     }
     (config.WORK_DIR / "pilot.json").write_text(json.dumps(plan, indent=2, default=float))
     print("wrote pilot.json and pilot.parquet")
