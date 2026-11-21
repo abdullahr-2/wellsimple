@@ -19,10 +19,14 @@ the crew logs.
 | Sensors to crew notes, 2026 hold-out | lift +0.067 (CI 0.062 to 0.073); other fields only +0.070 (0.064 to 0.075); component AUC 0.76 / 0.76 / 0.69 | `scripts/eval_crossmodal.py` |
 | Weibull shape of repair lifetimes | k = 0.61 (CI 0.60 to 0.62) | `wellsimple/reliability.py` |
 | Early vs late repeat risk (rod truck) | 3.0% per day in week 1 vs 0.28% per day at 6 to 12 months | overview hazard chart |
-| Expected 30-day exposure | $2.1M (conservative) to $2.8M (mid), as of 2026-10-27 | `scoring.py` |
+| Expected 30-day exposure (modelled) | $3.8M (conservative) to $4.6M (mid), as of 2026-10-27; about $3.0M of it is job cost, $0.8M to $1.6M is lost oil | `scoring.py` |
+| Repair spend within 30 days of a previous repair (measured) | 34% of repair jobs, about $13.9M a year (38% of repair spend) | `reliability.repeat_spend` |
+| Repair spend within 90 days of a previous repair (measured) | 60% of repair jobs, about $20.1M a year (55% of repair spend) | `reliability.repeat_spend` |
 
-Never quote a saving as measured. The exposure is what is at risk; the share that is avoidable is a
-scenario (10% of exposure is about $2.6M to $3.5M a year if exposure persists) that needs a field trial.
+Never quote a saving as measured. Exposure is mostly spend the company incurs anyway, so do not call
+it money to be made. The measured pool is the repeat-repair spend (about $13.9M a year within 30 days):
+it is a ceiling, not a saving. Say "if better repairs removed 10% of it, that is about $1.4M a year" as
+an illustration, and that a field trial would measure the real figure.
 
 ## 10-minute finalist talk
 
@@ -61,9 +65,11 @@ demo screens, not slides, for minutes 2 to 4. State AI use in the last 10 second
 - **Is the early hazard just follow-up visits?** Some of it may be. The next job can be a planned return
   trip. Tell them we flag this caveat on the slide, and that separating planned from unplanned follow-ups
   is the first refinement.
-- **Where does the dollar figure come from?** Job cost from the data's field estimates, lost oil per repair
-  event measured from downtime codes, oil valued at $32.50 or $61.60 a barrel from Strathcona's Q3 2026
-  release. It is exposure, not a measured saving.
+- **Where does the dollar figure come from?** Average repair cost ($17,461, capped at the 99th percentile)
+  from the data's field estimates, lost oil per repair event measured from downtime codes, oil valued at
+  $32.50 or $61.60 a barrel from Strathcona's Q3 2026 release. Only the oil part depends on price. It is
+  exposure, mostly spend that happens anyway, not a measured saving. The measured number is the repeat-repair
+  spend.
 - **Only 22 months of failures?** Yes, the failure log is almost entirely 2025 to 2026. Component labels use
   that window; repair outcomes use the full job log.
 - **Does it scale / is it commercial?** The scoring is a batch job over daily data, the app is a small

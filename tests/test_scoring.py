@@ -28,3 +28,11 @@ def test_reasons_only_when_well_is_unusual_in_the_bad_direction():
     row = pd.Series({"pump_efficiency_pct_d": -0.095, "pcp_pump_rod_torque_ftlb_m30": 400.0})
     out = scoring.reasons_for(row, ref)
     assert out == ["Pump efficiency falling"]  # low torque is not a reason
+
+
+def test_mean_repair_cost_uses_mean_not_median_and_caps_outliers():
+    costs = pd.Series([1000.0] * 90 + [50000.0] * 9 + [10_000_000.0])  # skewed, one absurd outlier
+    m = scoring.mean_repair_cost(costs)
+    assert m > costs.median() * 2          # an expectation must reflect the expensive jobs
+    assert m < costs.mean() / 3            # but one 10M outlier must not dominate
+    assert np.isfinite(scoring.mean_repair_cost(pd.Series([np.nan, 5.0])))

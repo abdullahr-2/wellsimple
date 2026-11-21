@@ -47,7 +47,7 @@ def main():
     n_events = len(rep)
     lost_per_event = scoring.lost_m3_per_event(daily, n_events)
     fleet_rate = float(wells["oil_produced_m3_m30"].mean())
-    typical_cost = float(rep["cost"].median())
+    typical_cost = scoring.mean_repair_cost(rep["cost"])  # mean, capped: this feeds an expected value
     for name, nb in scoring.NETBACK_SCENARIOS.items():
         loss = scoring.expected_loss(wells["p_repair"], wells["oil_produced_m3_m30"],
                                      typical_cost, lost_per_event, fleet_rate, nb)
@@ -118,6 +118,7 @@ def main():
         "hazard": reliability.empirical_hazard(rt[rt["job_category"] == "Rod Truck"]["t"], rt[rt["job_category"] == "Rod Truck"]["event"]),
         "age_replacement": reliability.optimal_age_replacement(k, lam, typical_cost, event_cost),
         "pareto": reliability.job_type_pareto(rt).to_dict("records"),
+        "repeat_spend": [reliability.repeat_spend(rep, d) for d in (30, 90)],
     }
     (config.WORK_DIR / "overview.json").write_text(json.dumps(overview, indent=2, default=float))
     print(f"wrote {len(wells)} wells; expected 30-day loss ${overview['expected_loss_low']:,.0f} to ${overview['expected_loss_mid']:,.0f}")

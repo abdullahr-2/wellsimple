@@ -32,6 +32,18 @@ REASON_LABELS = {
 }
 
 
+def mean_repair_cost(costs: pd.Series, cap_quantile: float = 0.99) -> float:
+    """Average cost of a repair job, for use inside an expected value.
+
+    The mean (not the median) is the right quantity for an expectation: repair costs are
+    heavily right-skewed (workovers cost many times a rod job), so the median would
+    understate expected spend. Costs are capped at a high quantile so a handful of
+    outlier jobs cannot dominate.
+    """
+    c = costs.dropna()
+    return float(c.clip(upper=c.quantile(cap_quantile)).mean())
+
+
 def fit_model(snapshots: pd.DataFrame) -> HistGradientBoostingClassifier:
     feats = risk.SENSOR_FEATURES + risk.HISTORY_FEATURES
     m = HistGradientBoostingClassifier(max_depth=4, learning_rate=0.06, max_iter=250, random_state=0)

@@ -39,14 +39,24 @@ is in making each repair last. By crew job type, rod repairs repeat within 30 da
 time (median fix lasts 31 to 38 days), against 14% to 20% for pump replacement (median 114 to 134 days).
 Caveat: the next job on a well can be a planned follow-up visit, so some early risk is return trips.
 
-**Money.** As of 2026-10-27 the 1,338 producing wells carry an expected 30-day cost of about
-**$2.1M (conservative) to $2.8M (mid)**: the job cost plus the oil lost, weighted by each well's
-repair probability. Assumptions: oil valued at $32.50 or $61.60 per barrel (Strathcona Q3 2026
-release: operating earnings per boe, and sales minus royalties, transport and energy), the
-median repair cost from the data, and the average equipment-related lost oil per repair job
-from the data, scaled by each well's oil rate. This is **exposure, not a measured saving**. As a
-scenario only: capturing 10% of it would be about $2.6M to $3.5M per year if the current
-exposure persisted. How much is truly avoidable is not measured here and would need a field trial.
+**Money.** Three different numbers, kept separate on purpose.
+
+1. *Exposure (modelled).* As of 2026-10-27 the 1,338 producing wells carry an expected 30-day cost
+   of about **$3.8M (conservative) to $4.6M (mid)**: each well's repair probability times (the
+   average repair cost, $17,461, plus the oil lost during a repair). About $3.0M of that is job
+   cost and $0.8M to $1.6M is lost oil. Only the oil part depends on the barrel price (valued at
+   $32.50 or $61.60 from Strathcona's Q3 2026 release: operating earnings per boe, and sales minus
+   royalties, transport and energy). The job-cost part depends on the data's field cost estimates.
+   Sanity check: repair jobs in the final 12 months cost about $3.8M per 30 days across all wells,
+   so the job-cost part is the right scale. **Exposure is mostly spend the company will incur
+   anyway. It is not new money, and it is not a saving.**
+2. *Addressable pool (measured).* Repair jobs that start within 30 days of a previous repair on the
+   same well are 34% of all repair jobs and about **$13.9M a year** of field-estimated cost (38% of
+   repair spend); within 90 days, 60% of jobs and about $20.1M a year (55%). This is a ceiling on what
+   better repairs could address, not a saving: some repeats are planned follow-up visits or unrelated
+   failures.
+3. *Savings (not measured).* Illustration only: if better repairs removed 10% of the 30-day repeat
+   spend, that would be about $1.4M a year before counting oil. The real figure needs a field trial.
 
 ## Limitations (stated up front)
 

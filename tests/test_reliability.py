@@ -52,3 +52,15 @@ def test_pareto_ranks_by_total_cost():
         rows += [{"job_type": jt, "cost": cost, "life_days": 20.0}] * n
     p = rel.job_type_pareto(pd.DataFrame(rows), min_jobs=150)
     assert p["job_type"].tolist() == ["Pump Repair", "Rod Repair"]  # 'Tiny' filtered out by min_jobs
+
+
+def test_repeat_spend_counts_only_jobs_after_a_recent_repair():
+    rep = pd.DataFrame({
+        "uwi": ["a", "a", "a", "b"],
+        "start_date": pd.to_datetime(["2025-01-01", "2025-01-11", "2025-06-01", "2025-01-05"]),
+        "cost": [100.0, 400.0, 900.0, 50.0],
+    })
+    s = rel.repeat_spend(rep, 30)
+    assert s["jobs"] == 1 and s["cost"] == 400.0           # only a's second job is within 30 days
+    assert abs(s["share_of_jobs"] - 0.25) < 1e-9
+    assert rel.repeat_spend(rep, 400)["jobs"] == 2          # a's third job is 141 days after the second

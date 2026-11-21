@@ -101,6 +101,21 @@ def _gammaln(x):
     return gammaln(x)
 
 
+def repeat_spend(rep: pd.DataFrame, days: int) -> dict:
+    """Spend on repair jobs that started within `days` of the previous repair on the same well.
+
+    This is an observed pool of spend, a ceiling on what better repairs could address.
+    It is not a saving: some repeats are planned follow-up visits or unrelated failures.
+    """
+    r = rep.sort_values(["uwi", "start_date"]).copy()
+    r["gap"] = r.groupby("uwi")["start_date"].diff().dt.days
+    rr = r[(r["gap"] > 0) & (r["gap"] <= days)]
+    years = max((rep["start_date"].max() - rep["start_date"].min()).days / 365.25, 1e-9)
+    return {"days": days, "jobs": int(len(rr)), "share_of_jobs": float(len(rr) / max(len(r), 1)),
+            "cost": float(rr["cost"].sum()), "cost_per_year": float(rr["cost"].sum() / years),
+            "share_of_cost": float(rr["cost"].sum() / max(r["cost"].sum(), 1e-9))}
+
+
 def job_type_pareto(rep_t: pd.DataFrame, min_jobs: int = 150, top: int = 10) -> pd.DataFrame:
     """Where the repair money goes, by the crews' own job_type, with how well each fix holds."""
     g = rep_t.groupby("job_type")
