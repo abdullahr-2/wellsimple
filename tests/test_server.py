@@ -34,6 +34,8 @@ def _wells():
         "precedent_cost_per_day": [100.0, np.nan, 200.0],
         "last_repair_note": ["broken polish rod", "pump change rotor", ""],
         "last_repair_date": pd.to_datetime(["2026-01-01"] * 3),
+        "p_pump": [0.1, 0.6, 0.2], "p_rods": [0.8, 0.3, 0.7], "p_tubing": [0.1, 0.1, 0.1],
+        "autopsy_notes": ['[{"text": "broken rotor", "component": "Pump"}]'] * 3,
     })
 
 
@@ -94,3 +96,10 @@ def test_validation(client):
     assert client.post("/api/crews/crew-1/location", json={"lat": 999, "lon": 0}).status_code == 422
     assert client.get("/api/wells/unknown").status_code == 404
     assert client.get("/api/wells?sort=bogus").status_code == 422
+
+
+def test_detail_includes_sensor_based_autopsy(client):
+    d = client.get("/api/wells/w2").json()
+    assert d["autopsy"]["p"] == {"Pump": 0.6, "Rods": 0.3, "Tubing": 0.1}
+    assert d["autopsy"]["notes"][0]["text"] == "broken rotor"
+    assert "autopsy_notes" not in d["well"]

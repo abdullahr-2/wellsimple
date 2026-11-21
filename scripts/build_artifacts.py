@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import numpy as np
 import pandas as pd
 
-from wellsimple import config, data, notes, risk, scoring
+from wellsimple import config, crossmodal, data, notes, risk, scoring
 
 META = ["uwi", "production_date", "well_name", "field_operating_area", "facility_name",
         "surface_latitude", "surface_longitude"]
@@ -72,6 +72,17 @@ def main():
     wells["precedent_life_days"] = pm
     wells["precedent_cost"] = pc
     wells["precedent_cost_per_day"] = pl
+
+    # ---- sensors-to-crew-notes: likely component and the real notes it resembles ----
+    print("training cross-modal model ...")
+    cm_ds = crossmodal.failure_dataset(daily, data.load_failures(), jobs)
+    cm = crossmodal.CrossModal().fit(cm_ds)
+    pr = cm.proba(wells)
+    wells["p_pump"], wells["p_rods"], wells["p_tubing"] = pr["Pump"].values, pr["Rods"].values, pr["Tubing"].values
+    allowed = wells["uwi"].to_numpy(object)[:, None] != cm.notes_["uwi"].to_numpy(object)[None, :]
+    wells["autopsy_notes"] = [
+        json.dumps([{"text": cm.notes_["text"].iloc[i][:400], "component": cm.notes_["failure_class"].iloc[i]} for i in ix])
+        for ix in cm.retrieve(wells, 3, allowed)]
 
     wells.to_parquet(config.WORK_DIR / "wells.parquet", index=False)
 

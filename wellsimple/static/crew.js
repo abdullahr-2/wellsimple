@@ -73,12 +73,13 @@ async function openJob(r) {
   $('jMeta').textContent = (r.field || '') + ' · ' + r.uwi;
   $('jManager').replaceChildren(...(r.manager_note ? [el('div', { class: 'note', text: 'Manager: ' + r.manager_note })] : []));
   $('jReasons').replaceChildren(...(r.reasons ? r.reasons.split('; ').map(x => el('span', { class: 'tag', text: x })) : []));
-  $('jSummary').textContent = ''; $('jPrec').replaceChildren(el('div', { class: 'muted small', text: 'Loading similar past jobs…' }));
+  $('jSummary').textContent = ''; $('jAutopsy').replaceChildren(); $('jPrec').replaceChildren(el('div', { class: 'muted small', text: 'Loading similar past jobs…' }));
   $('navLink').href = 'https://www.google.com/maps/dir/?api=1&destination=' + r.lat + ',' + r.lon;
   if (!C.map) { C.map = osmMap('jmap', [r.lat, r.lon], 12); C.layers = L.layerGroup().addTo(C.map); }
   updateJobMap(true); setTimeout(() => C.map.invalidateSize(), 50);
   try {
     const d = await api('/api/wells/' + encodeURIComponent(r.uwi) + '?k=3'), s = d.summary;
+    $('jAutopsy').replaceChildren(autopsyBlock(d.autopsy));
     if (s && s.median_life_days != null)
       $('jSummary').textContent = 'Similar past repairs lasted a median of ' + num(s.median_life_days) + ' days at about ' + money(s.cost_per_day_of_life) + ' per day of well life.';
     $('jPrec').replaceChildren(...(d.precedents.length ? d.precedents.map(p => el('div', { class: 'note' },

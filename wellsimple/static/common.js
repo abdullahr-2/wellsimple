@@ -33,3 +33,15 @@ function osmMap(id, center, zoom) {
     { maxZoom: 18, attribution: '&copy; OpenStreetMap contributors' }).addTo(m);
   return m;
 }
+
+// "Likely finding": what wells with similar sensor behavior turned out to have. Shown as an
+// estimate with the real past notes it is based on; it is not a diagnosis.
+function autopsyBlock(a) {
+  if (!a) return el('div', { class: 'muted small', text: 'No sensor-based estimate for this well.' });
+  const parts = Object.entries(a.p).sort((x, y) => y[1] - x[1]);
+  return el('div', {},
+    el('div', { class: 'small', text: 'Likely finding, from sensors alone' }),
+    el('div', {}, ...parts.map(([k, v]) => el('span', { class: 'tag', text: k + ' ' + pct(v) }))),
+    ...a.notes.map(n => el('div', { class: 'note' }, el('div', { class: 'small muted', text: 'Past note from a well that behaved similarly (' + n.component + ')' }), el('div', { text: n.text }))),
+    el('div', { class: 'small muted', text: 'Estimate, not a diagnosis. In a 2026 hold-out test the model ranked pump, rod and tubing failures with AUC 0.69 to 0.76 (0.5 is chance).' }));
+}

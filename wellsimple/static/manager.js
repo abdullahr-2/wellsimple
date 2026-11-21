@@ -93,6 +93,7 @@ async function showDetail(w) {
       el('div', { class: 'small muted', text: 'Risk ' + pct(w.p_repair) + ' · expected loss ' + money(w[lossKey()]) }),
       s && s.median_life_days != null ? el('p', { class: 'small', text: 'Similar past repairs lasted a median of ' + num(s.median_life_days) +
         ' days (middle half: ' + num(s.life_p25) + '–' + num(s.life_p75) + '), at about ' + money(s.cost_per_day_of_life) + ' per day of well life.' }) : null,
+      autopsyBlock(d.autopsy),
       el('div', { class: 'small', text: 'Closest past jobs' }),
       ...(d.precedents.length ? d.precedents.map(p => el('div', { class: 'note' },
         el('div', { class: 'small muted', text: (p.date || '') + ' · similarity ' + p.similarity + ' · lasted ' + (p.life_days == null ? 'unknown' : num(p.life_days) + ' days') + ' · cost ' + money(p.cost) }),

@@ -110,8 +110,12 @@ def create_app(wells: pd.DataFrame, overview: dict, memory: notes.WellMemory,
             for p in memory.search(query, k=k, exclude_uwi=uwi):
                 precedents.append({"date": _clean(p.start_date), "similarity": round(p.similarity, 3),
                                    "text": p.text[:500], "cost": _clean(p.cost), "life_days": _clean(p.life_days)})
-        d = {c: _clean(w[c]) for c in wells.columns}
-        return {"well": d, "query": query[:500], "precedents": precedents,
+        d = {c: _clean(w[c]) for c in wells.columns if c != "autopsy_notes"}
+        autopsy = None
+        if "autopsy_notes" in wells.columns and isinstance(w["autopsy_notes"], str):
+            autopsy = {"p": {"Pump": _clean(w["p_pump"]), "Rods": _clean(w["p_rods"]), "Tubing": _clean(w["p_tubing"])},
+                       "notes": json.loads(w["autopsy_notes"])}
+        return {"well": d, "query": query[:500], "precedents": precedents, "autopsy": autopsy,
                 "summary": notes.summarize(memory.search(query, k=10, exclude_uwi=uwi)) if query else None}
 
     @app.get("/api/crews")
