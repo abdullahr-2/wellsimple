@@ -23,6 +23,13 @@ the crew logs.
 | Repair spend within 30 days of a previous repair (measured) | 34% of repair jobs, about $13.9M a year (38% of repair spend) | `reliability.repeat_spend` |
 | Repair spend within 90 days of a previous repair (measured) | 60% of repair jobs, about $20.1M a year (55% of repair spend) | `reliability.repeat_spend` |
 
+**We do not claim a measured saving, and that is a strength.** We tested where a saving could come from
+(`scripts/eval_savings_levers.py`): dispatch order has nothing to save (93.7% of failures are repaired the
+same day), the cheap rod fix already has the lowest cost per day of life, and pump-make differences appear
+between wells but not reliably within a well. The honest deliverable is the implementation plan: a
+12-month pilot on 100 to 150 repeat-prone wells per arm detects a 50% cut in repeats about 76% to 92% of the
+time (`scripts/trial_power.py`); each 10% of the $13.9M a year repeat pool is about $1.4M a year.
+
 Never quote a saving as measured. Exposure is mostly spend the company incurs anyway, so do not call
 it money to be made. The measured pool is the repeat-repair spend (about $13.9M a year within 30 days):
 it is a ceiling, not a saving. Say "if better repairs removed 10% of it, that is about $1.4M a year" as
@@ -41,7 +48,8 @@ an illustration, and that a field trial would measure the real figure.
    system knows", log the job in three taps, submit. Back on the manager screen: resolved.
 5. **How it works (1:30).** Three parts: risk model, Well Memory (retrieval over crew notes, no
    generative model), sensors-to-notes model. One slide of test results with held-out numbers.
-6. **Money and honesty (1:00).** Exposure range and the assumptions. Then limitations: the 22-month
+6. **Money, the pilot and honesty (1:30).** Show exposure vs the measured repeat pool. Say we looked for a
+   measurable saving in three places and found two empty and one unconfirmed. Then the pilot design table. Exposure range and the assumptions. Then limitations: the 22-month
    failure log, moderate cross-modal accuracy, planned work in the label.
 7. **Next steps (0:30).** Follow-up "did the fix hold?" prompts, Canary Historian live feed, trial on
    one field.
@@ -65,6 +73,11 @@ demo screens, not slides, for minutes 2 to 4. State AI use in the last 10 second
 - **Is the early hazard just follow-up visits?** Some of it may be. The next job can be a planned return
   trip. Tell them we flag this caveat on the slide, and that separating planned from unplanned follow-ups
   is the first refinement.
+- **So what will it save?** We can't measure that from history because nothing in the data is an
+  intervention. We tested three levers and report what held and what did not. The measured pool is $13.9M a
+  year of repeat-repair spend; each 10% prevented is about $1.4M a year. A 12-month pilot on 100 to 150
+  repeat-prone wells per arm would measure a 50% reduction with 76% to 92% power; smaller effects need a longer
+  trial. That plan is the deliverable.
 - **Where does the dollar figure come from?** Average repair cost ($17,461, capped at the 99th percentile)
   from the data's field estimates, lost oil per repair event measured from downtime codes, oil valued at
   $32.50 or $61.60 a barrel from Strathcona's Q3 2026 release. Only the oil part depends on price. It is

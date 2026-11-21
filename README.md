@@ -56,7 +56,37 @@ Caveat: the next job on a well can be a planned follow-up visit, so some early r
    better repairs could address, not a saving: some repeats are planned follow-up visits or unrelated
    failures.
 3. *Savings (not measured).* Illustration only: if better repairs removed 10% of the 30-day repeat
-   spend, that would be about $1.4M a year before counting oil. The real figure needs a field trial.
+   spend, that would be about $1.4M a year before counting oil. Nothing in this historical data is an
+   intervention, so a saving cannot be measured from it. See the next section for what we tested and
+   for the trial that would measure it.
+
+## Can we measure savings? What the data supports
+
+We tested the three places a saving could come from (`scripts/eval_savings_levers.py`). Two found
+nothing to save and one is a hypothesis, not a result.
+
+| Lever | Result | Verdict |
+|---|---|---|
+| Dispatch order | 93.7% of failures get a repair job the same day or earlier; 0.9% wait more than 3 days | Nothing to re-order |
+| Choice of fix | In the same 812 wells, cost per day of life including lost oil: rod fix $246, pump $306, tubing $397 | The cheap fix already wins; fixes are not interchangeable |
+| Pump make | Rate of the next repair versus PCM, between wells: MANTL 0.65 (0.54 to 0.80), BMW 0.60 (0.46 to 0.78), Europump 0.72 (0.53 to 0.89), Weatherford 0.79 (0.69 to 0.94), LSI 1.12 (0.95 to 1.28). Within the same well (308 wells with 2+ makes): all intervals include 1 and BMW reverses to 1.56 (1.13 to 2.50) | Suggestive between wells, not confirmed within wells. A hypothesis for a pilot |
+
+**Measuring the saving needs a trial, and the data tells us how big** (`scripts/trial_power.py`).
+Repeat repairs are lumpy: 72% of producing wells had none in the last 12 months and one had 17. We
+resampled real wells, gave half a hypothetical reduction in repeats, and counted how often a standard
+test detects it in a 12-month trial:
+
+| Wells per arm | 20% fewer repeats | 30% fewer | 50% fewer |
+|---|---|---|---|
+| 100 (whole fleet) | 8% | 16% | 46% |
+| 400 (whole fleet) | 25% | 52% | 96% |
+| 669 (whole fleet, half each) | 38% | 76% | 100% |
+| 100 (only wells that repeated last year) | 15% | 27% | 76% |
+| 150 (only wells that repeated last year) | 17% | 36% | 92% |
+
+So: a 12-month pilot on about 100 to 150 repeat-prone wells per arm can reliably detect a 50% reduction.
+Smaller effects need a longer trial or a within-well crossover. Each 10% of the measured $13.9M a year
+repeat pool is about $1.4M a year (field-estimated repair spend, before oil).
 
 ## Limitations (stated up front)
 
@@ -116,12 +146,14 @@ demo inputs, not field records.
   text space and returns the nearest real notes and a likely component.
 - `wellsimple/reliability.py`: censored Weibull fit of repair lifetimes, empirical hazard, the
   age-replacement test (Barlow-Proschan) and a job-type cost Pareto.
+- `wellsimple/levers.py`: tests of candidate savings sources (pump-make rate ratios with field and
+  well controls, cluster bootstrap intervals). `scripts/trial_power.py`: data-calibrated trial design.
 - `wellsimple/scoring.py`: expected dollar loss per well and rank-based reasons.
 - `wellsimple/server.py`, `wellsimple/static/`: FastAPI app with the manager and crew portals.
 
 **Validation**: all splits are time-ordered; the retrieval tests exclude the failing well, and the
 cross-modal test also excludes the failing well's field; history and label logic has unit tests
-(`python -m pytest`, 25 tests, including recovery of known Weibull parameters under censoring). Both portals were exercised in a headless browser.
+(`python -m pytest`, 31 tests, including recovery of known Weibull and rate-ratio parameters and a test that field controls remove a false make effect). Both portals were exercised in a headless browser.
 
 **External resources**: Strathcona Resources Q3 2026 results release (price and cost assumptions),
 OpenStreetMap tiles, Leaflet 1.9.4 and Chart.js 4.4.1 (loaded from CDNs).
