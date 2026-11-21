@@ -142,6 +142,7 @@ def create_app(wells: pd.DataFrame, overview: dict, memory: notes.WellMemory,
                 r = {**r, "well_name": _clean(w["well_name"]), "field": _clean(w["field_operating_area"]),
                      "lat": _clean(w["surface_latitude"]), "lon": _clean(w["surface_longitude"]),
                      "p_repair": _clean(w["p_repair"]), "expected_loss_mid": _clean(w["expected_loss_mid"]),
+                     "expected_loss_low": _clean(w["expected_loss_low"]),
                      "reasons": _clean(w["reasons"])}
             out.append(r)
         return out

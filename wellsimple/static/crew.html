@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b6e4f">
+<title>WellSimple Crew</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="/static/app.css">
+<style>
+  main { max-width: 640px; padding-bottom: 80px; }
+  .job { display:block; width:100%; text-align:left; margin-bottom:10px; cursor:pointer; }
+  .job h3 { margin:0 0 4px; font-size:16px; }
+  .map { height: 260px; }
+  .sticky { position:sticky; bottom:0; background:var(--bg); padding:10px 0 calc(10px + env(safe-area-inset-bottom)); }
+  .status { font-size:12.5px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>WellSimple <span class="sub">Crew</span></h1>
+  <span class="grow"></span>
+  <select id="crew" style="width:auto" aria-label="Crew"></select>
+</header>
+<main>
+  <div class="banner">Demo build. Submissions here are demo inputs, not field records.</div>
+  <div class="card row" style="margin-bottom:12px">
+    <button class="ghost" id="loc">Share my location</button>
+    <span class="status muted" id="locStatus">Location off</span>
+    <span class="status" id="queueStatus"></span>
+  </div>
+
+  <section id="listView">
+    <h2 style="margin:6px 0 10px">Assigned wells</h2>
+    <div id="jobs"></div>
+  </section>
+
+  <section id="jobView" class="hidden">
+    <button class="ghost" id="back">← Back</button>
+    <div class="card" style="margin-top:10px">
+      <div class="row"><h2 id="jTitle" style="margin:0;flex:1"></h2><span id="jRisk"></span></div>
+      <div class="muted small" id="jMeta"></div>
+      <div id="jManager"></div>
+    </div>
+    <div id="jmap" class="map" style="margin-top:12px"></div>
+    <div class="row" style="margin-top:8px"><a id="navLink" target="_blank" rel="noopener">Directions in maps app</a><span class="muted small" id="jDist"></span></div>
+
+    <div class="card" style="margin-top:12px">
+      <h3 style="margin-top:0">What the system knows</h3>
+      <div id="jReasons"></div>
+      <div id="jSummary" class="small"></div>
+      <div id="jPrec"></div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <h3 style="margin-top:0">Log the job</h3>
+      <label class="f">What did you do?</label>
+      <div class="chips" id="chips"></div>
+      <label class="f" for="cNote">Notes (what you found, depths, anything unusual)</label>
+      <textarea id="cNote" rows="5" maxlength="3000" placeholder="e.g. broken rotor, sand fill at 768 m, bailed 7 joints"></textarea>
+      <div class="row"><button class="ghost" id="dictate" type="button">Dictate</button><span class="muted small" id="dictHint">Uses your browser's speech recognition.</span></div>
+      <div class="row">
+        <div style="flex:1"><label class="f" for="cCost">Cost ($, optional)</label><input id="cCost" type="number" inputmode="decimal" min="0"></div>
+        <div style="flex:1"><label class="f" for="cHours">Hours on site</label><input id="cHours" type="number" inputmode="decimal" min="0" step="0.25"></div>
+      </div>
+      <div class="sticky"><button class="primary" id="submit" style="width:100%">Mark resolved and send</button></div>
+      <div id="msg" class="small"></div>
+    </div>
+  </section>
+</main>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/static/common.js"></script>
+<script src="/static/crew.js"></script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WellSimple Manager</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<header>
+  <h1>WellSimple <span class="sub">Manager</span></h1>
+  <span class="sub" id="asof"></span>
+  <span class="grow"></span>
+  <label class="small muted" for="scenario">Oil value</label>
+  <select id="scenario" style="width:auto">
+    <option value="low">Conservative ($32.50/bbl)</option>
+    <option value="mid">Mid ($61.60/bbl)</option>
+  </select>
+  <a class="small" href="/crew">Crew portal</a>
+</header>
+<main>
+  <div class="banner">Demo build. Dollar figures depend on stated price assumptions (Strathcona Q3 2026 release). Assignments and crew submissions are demo inputs, not field records.</div>
+  <div class="cards" id="kpis"></div>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" data-tab="overview" aria-selected="true">Overview</button>
+    <button class="tab" role="tab" data-tab="wells" aria-selected="false">At-risk wells</button>
+    <button class="tab" role="tab" data-tab="assigned" aria-selected="false">Assigned</button>
+    <button class="tab" role="tab" data-tab="resolved" aria-selected="false">Resolved</button>
+  </div>
+
+  <section id="tab-overview">
+    <div class="grid2">
+      <div class="card"><h3 style="margin-top:0">Lost oil and repair jobs by month</h3><canvas id="chartMonthly" height="170"></canvas></div>
+      <div class="card"><h3 style="margin-top:0">Where the lost oil goes (m³)</h3><canvas id="chartCodes" height="220"></canvas>
+        <p class="small muted">"Uneconomic - Long Term Shut In" is a business decision, not an equipment failure.</p></div>
+    </div>
+  </section>
+
+  <section id="tab-wells" class="hidden">
+    <div class="card" style="margin-bottom:14px">
+      <div class="row">
+        <div><label class="f" for="sort" style="margin-top:0">Priority</label>
+          <select id="sort">
+            <option value="loss">Most expensive first (expected loss)</option>
+            <option value="risk">Highest risk first</option>
+            <option value="closest">Closest first</option>
+            <option value="furthest">Furthest first</option>
+          </select></div>
+        <div><label class="f" for="origin" style="margin-top:0">Distance from</label>
+          <select id="origin"></select></div>
+        <div><label class="f" for="minrisk" style="margin-top:0">Minimum risk</label>
+          <select id="minrisk"><option value="0">All</option><option value="0.2">20%+</option><option value="0.4">40%+</option></select></div>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="card" style="overflow-x:auto"><table id="wellsTable"></table></div>
+      <div>
+        <div id="map" class="map"></div>
+        <div class="card" id="detail" style="margin-top:14px"><div class="empty">Select a well to see why it is flagged and what similar past jobs show.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-assigned" class="hidden"><div class="card" style="overflow-x:auto"><table id="assignedTable"></table></div></section>
+  <section id="tab-resolved" class="hidden"><div class="card" style="overflow-x:auto"><table id="resolvedTable"></table></div></section>
+</main>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="/static/common.js"></script>
+<script src="/static/manager.js"></script>
+</body>
+</html>
