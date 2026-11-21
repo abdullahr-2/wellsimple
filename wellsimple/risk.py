@@ -72,6 +72,18 @@ def _history_and_label(snap: pd.DataFrame, repairs: pd.DataFrame, horizon: int) 
     return snap
 
 
+def latest_snapshot(daily: pd.DataFrame, repairs: pd.DataFrame) -> pd.DataFrame:
+    """Features for every producing well on the last day in the data (no label)."""
+    feats = _rolling_features(daily)
+    # the final calendar day can be a partial day with no status filled in,
+    # so use the latest day on which any well has a status
+    last_day = feats.loc[feats["well_daily_status"].notna(), "production_date"].max()
+    snap = feats[(feats["production_date"] == last_day) & (feats["well_daily_status"] == "Producing")]
+    snap = snap.reset_index(drop=True)
+    snap = _history_and_label(snap, repairs.dropna(subset=["start_date"]), 30)
+    return snap.drop(columns="label")
+
+
 def build_snapshots(
     daily: pd.DataFrame, repairs: pd.DataFrame, step: int = 7, horizon: int = 30
 ) -> pd.DataFrame:
