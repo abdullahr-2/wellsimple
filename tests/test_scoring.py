@@ -8,7 +8,7 @@ def test_expected_loss_scales_with_probability_and_rate():
     p = pd.Series([0.5, 0.5])
     rate = pd.Series([10.0, 30.0])  # second well produces 3x more
     out = scoring.expected_loss(p, rate, typical_cost=5000.0, lost_m3_per_event=20.0,
-                                fleet_rate=10.0, netback_per_bbl=50.0)
+                                fleet_oil_rate=10.0, netback_per_bbl=50.0)
     # lost oil: 20 m3 and 60 m3 -> times 6.2898 bbl/m3 times $50
     assert np.isclose(out.event_cost[0], 5000 + 20 * 6.2898 * 50)
     assert np.isclose(out.event_cost[1], 5000 + 60 * 6.2898 * 50)
