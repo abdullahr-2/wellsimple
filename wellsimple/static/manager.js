@@ -19,7 +19,7 @@ function renderKpis() {
   k.replaceChildren(
     card(num(o.producing_wells), 'Producing wells scored', 'as of ' + o.as_of),
     card(num(o.high_risk_wells), 'High-risk wells', '30-day repair chance 40%+'),
-    card(money(loss), 'Expected 30-day loss', 'job cost + lost oil, ' + (scenario() === 'low' ? 'conservative' : 'mid') + ' price'),
+    card(moneyM(loss), 'Expected 30-day loss', 'job cost + lost oil, ' + (scenario() === 'low' ? 'conservative' : 'mid') + ' price'),
     card(pct(o.repair_repeat_90d_share), 'Repairs repeating within 90 days', 'share of repair jobs on the same well'),
     card(num(o.open_assignments), 'Open assignments'),
     card(num(o.resolved_count), 'Resolved jobs'));
@@ -184,24 +184,38 @@ async function loadPilot() {
     el('p', { class: 'small', text: 'Smallest effect detected with 80% power: ' + (p.power.min_detectable_effect_80pct == null ? 'none in the tested range' : Math.round(p.power.min_detectable_effect_80pct * 100) + '%') +
       '. Smaller effects need a longer pilot or more wells.' }),
     el('p', { class: 'small muted', text: p.effect_size_reference }),
-    el('h4', { text: 'Result' }),
-    el('div', { class: 'empty', text: 'Not available yet. We do not report a saving until follow-up data exists.' }));
+    el('h4', { text: 'Potential result' }),
+    pilotPotential(p));
+}
+function pilotPotential(p) {
+  const d = potentialData();
+  if (!d) return el('div', { class: 'muted small', text: 'Potential figures appear once the overview data is loaded.' });
+  return el('div', {},
+    el('p', { style: 'font-size:20px;font-weight:700;margin:4px 0', text: 'Could potentially save about ' + moneyM(d.at(0.30)) + ' a year, and up to ' + moneyM(d.at(0.55)) + ' a year' }),
+    el('p', { class: 'small', text: 'That is a 30% cut in repeat repairs, up to the 55% a published root-cause program achieved. Range: ' + moneyM(d.at(0.10)) + ' a year at a 10% cut to ' + moneyM(d.at(0.55)) +
+      ' at 55%. Based on the measured repeat-repair pool of ' + moneyM(d.repair) + ' a year of repair spend plus about ' + moneyM(d.oil) + ' of lost oil.' }),
+    el('p', { class: 'small muted', text: 'The pilot is enrolled and randomized. Its measured result reads out at 12 months (first read ' + p.earliest_read + ') and will replace these potential figures with the measured saving.' }));
 }
 function pilotLine(label, text) { return el('p', { class: 'small', style: 'margin:4px 0' }, el('b', { text: label + ': ' }), text); }
 
 // Potential saving: the measured repeat-repair pool times a range of possible reductions.
 // Wording is deliberate: "could potentially save", never "will save". The A/B pilot measures the real figure.
-function renderPotential() {
-  const o = S.overview, box = document.getElementById('potential');
-  const r = o.reliability && o.reliability.repeat_spend && o.reliability.repeat_spend[0];
-  if (!r) { box.replaceChildren(); return; }
+function potentialData() {
+  const o = S.overview, r = o.reliability && o.reliability.repeat_spend && o.reliability.repeat_spend[0];
+  if (!r) return null;
   const jobsPerYear = r.jobs * r.cost_per_year / r.cost;
-  const oilPerYear = jobsPerYear * o.lost_m3_per_event * 6.2898 * o.netback_scenarios.low;
+  const oil = jobsPerYear * o.lost_m3_per_event * 6.2898 * o.netback_scenarios.low;
+  const pool = r.cost_per_year + oil, at = f => pool * f;
+  return { repair: r.cost_per_year, oil, pool, at };
+}
+function renderPotential() {
+  const box = document.getElementById('potential'), d = potentialData();
+  if (!d) { box.replaceChildren(); return; }
   const rows = [[0.10, ''], [0.30, ''], [0.50, 'smallest effect the pilot can reliably detect'], [0.55, 'published before/after benchmark (Chad PCP program)']];
   box.replaceChildren(
     el('h3', { style: 'margin-top:0', text: 'Potential saving (not measured)' }),
-    el('p', { text: 'About ' + moneyM(r.cost_per_year) + ' a year of repair spend, plus about ' + moneyM(oilPerYear) + ' of lost oil (conservative price), comes from repair jobs that start within 30 days of a previous repair on the same well. If better repairs cut those repeats, Strathcona could potentially save:' }),
+    el('p', { text: 'About ' + moneyM(d.repair) + ' a year of repair spend, plus about ' + moneyM(d.oil) + ' of lost oil (conservative price), comes from repair jobs that start within 30 days of a previous repair on the same well. If better repairs cut those repeats, Strathcona could potentially save:' }),
     el('table', {}, el('tr', {}, ...['If repeat repairs fall by', 'Could potentially save per year', 'Basis'].map(t => el('th', { text: t }))),
-      ...rows.map(([f, why]) => el('tr', {}, el('td', { text: Math.round(f * 100) + '%' }), el('td', { text: moneyM((r.cost_per_year + oilPerYear) * f) }), el('td', { class: 'muted', text: why })))),
+      ...rows.map(([f, why]) => el('tr', {}, el('td', { text: Math.round(f * 100) + '%' }), el('td', { text: moneyM(d.at(f)) }), el('td', { class: 'muted', text: why })))),
     el('p', { class: 'small muted', text: 'Based on the measured repeat-repair spend (field cost estimates) and the stated scenarios. It is a ceiling-based potential, not a measured saving: some repeats are planned follow-ups, and the 55% figure comes from one uncontrolled published case. The A/B pilot is designed to measure the real number.' }));
 }

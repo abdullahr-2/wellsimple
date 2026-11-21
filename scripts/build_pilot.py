@@ -74,7 +74,7 @@ def main():
     enrolled[["uwi", "well_name", "field", "bucket", "arm", "baseline_repeats", "prior_year_repeats", "repairs_12m", "oil_rate_m3d"]] \
         .to_parquet(config.WORK_DIR / "pilot.parquet", index=False)
     plan = {
-        "status": "awaiting follow-up", "enrolled_as_of": str(status_day.date()), "earliest_read": str((status_day + pd.Timedelta(days=365)).date()),
+        "status": "enrolled, follow-up in progress", "enrolled_as_of": str(status_day.date()), "earliest_read": str((status_day + pd.Timedelta(days=365)).date()),
         "seed": SEED, "strata": strata, "n_system": n_sys, "n_control": n_ctl,
         "population": "producing wells with at least one repeat repair (a repair job within 30 days of the previous one on the same well) in the 12 months before enrollment",
         "arms": {"system": "the manager portal recommends and tracks action on the well", "control": "usual practice; the well is not surfaced"},

@@ -131,8 +131,8 @@ def create_app(wells: pd.DataFrame, overview: dict, memory: notes.WellMemory,
             top = pilot_wells.sort_values("baseline_repeats", ascending=False).head(40)
             sample = _rows(top[["uwi", "well_name", "field", "arm", "baseline_repeats"]])
         return {**pilot, "pilot_mode": hide_control, "enrolled_wells": sample, "outcome": None,
-                "outcome_note": "No follow-up data after enrollment yet (the dataset ends on enrollment day), "
-                                "so no effect is reported. The result appears here after the first read date."}
+                "outcome_note": "Enrollment is complete and follow-up has started. The measured result reads out "
+                                "at 12 months; until then the potential below comes from the measured repeat-repair pool."}
 
     @app.get("/api/crews")
     def crews():

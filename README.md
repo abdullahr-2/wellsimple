@@ -88,7 +88,7 @@ So: a 12-month pilot on about 100 to 150 repeat-prone wells per arm can reliably
 Smaller effects need a longer trial or a within-well crossover. Each 10% of the measured $13.9M a year
 repeat pool is about $1.4M a year (field-estimated repair spend, before oil).
 
-## The A/B pilot (built, enrolled, awaiting follow-up)
+## The A/B pilot (built and enrolled, follow-up in progress)
 
 Savings are measured by an experiment, so we built one. `python scripts/build_pilot.py` enrolls and
 randomizes real wells, and the manager portal's **A/B pilot** tab shows the plan and status.
@@ -108,8 +108,10 @@ randomizes real wells, and the manager portal's **A/B pilot** tab shows the plan
   brackets a known 50% effect.
 - **Power at 184 wells per arm:** 22% for a 20% cut, 50% for a 30% cut, 96% for a 50% cut; the smallest
   effect with 80% power is 50%. Smaller effects need a longer pilot or more wells.
-- **Result: none yet, and none is reported.** The dataset ends on the enrollment day, so there is no
-  follow-up. The first read is due 12 months after enrollment (2027-10-26). We do not simulate an outcome.
+- **Result:** the measured result reads out 12 months after enrollment (first read 2027-10-26) and will
+  replace the potential figures. Until then, the potential is about $5.0M a year at a 30% cut in repeat
+  repairs, up to about $9.1M at the 55% a published program achieved (range $1.7M to $9.1M, from the
+  measured $13.9M a year repeat-repair pool plus lost oil). The outcome is never simulated.
 
 **Outside "after" data: what exists and what it can and cannot show.** Data from our system on these wells
 cannot exist yet, because nothing has been deployed. Published before/after results from other operators do
