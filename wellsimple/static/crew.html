@@ -59,7 +59,7 @@
       <div class="chips" id="chips"></div>
       <label class="f" for="cNote">Notes (what you found, depths, anything unusual)</label>
       <textarea id="cNote" rows="5" maxlength="3000" placeholder="e.g. broken rotor, sand fill at 768 m, bailed 7 joints"></textarea>
-      <div class="row"><button class="ghost" id="dictate" type="button">Dictate</button><span class="muted small" id="dictHint">Uses your browser's speech recognition.</span></div>
+      <div class="row"><button class="ghost" id="dictate" type="button">Dictate</button><span class="muted small" id="dictHint" aria-live="polite">Uses your browser's speech recognition.</span></div>
       <div class="row">
         <div style="flex:1"><label class="f" for="cCost">Cost ($, optional)</label><input id="cCost" type="number" inputmode="decimal" min="0"></div>
         <div style="flex:1"><label class="f" for="cHours">Hours on site</label><input id="cHours" type="number" inputmode="decimal" min="0" step="0.25"></div>

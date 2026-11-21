@@ -128,17 +128,61 @@ async function submit() {
   setTimeout(() => { $('submit').disabled = false; closeJob(); }, 1200);
 }
 
-// ---- dictation (browser speech recognition; audio handling is up to the browser) ----
+// ---- dictation (browser speech recognition) ----
+// Chrome and Edge use an online speech service. Other browsers (Brave, Firefox, plain Chromium) may expose the
+// API but never start, so every failure path says what is wrong instead of failing silently.
+const DICT_ERRORS = {
+  'not-allowed': "Microphone is blocked. Click the lock icon in the address bar, allow the microphone, then try again.",
+  'service-not-allowed': "This browser blocks its speech service. Use Chrome or Edge, or your keyboard's microphone key.",
+  'audio-capture': "No microphone found. Plug one in or check your system sound settings.",
+  'network': "The speech service could not be reached. Dictation needs an internet connection in Chrome and Edge.",
+  'no-speech': "Did not hear anything. Try again closer to the microphone.",
+  'language-not-supported': "This browser does not support dictation in English (Canada).",
+};
 function setupDictation() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { $('dictate').classList.add('hidden'); $('dictHint').classList.add('hidden'); return; }
-  let rec = null;
-  $('dictate').addEventListener('click', () => {
+  const btn = $('dictate'), hint = $('dictHint'), note = $('cNote');
+  const IDLE = "Uses your browser's speech recognition. Your keyboard's microphone key also works.";
+  hint.textContent = IDLE;
+  if (!SR) {
+    btn.disabled = true;
+    hint.textContent = "Dictation is not available in this browser. Use Chrome or Edge, or your keyboard's microphone key.";
+    return;
+  }
+  let rec = null, watchdog = null, failed = false;
+  const reset = () => { clearTimeout(watchdog); rec = null; btn.textContent = 'Dictate'; };
+  btn.addEventListener('click', () => {
     if (rec) { rec.stop(); return; }
-    rec = new SR(); rec.lang = 'en-CA'; rec.interimResults = false; rec.continuous = true;
-    rec.onresult = ev => { for (let i = ev.resultIndex; i < ev.results.length; i++) if (ev.results[i].isFinal) $('cNote').value += (($('cNote').value ? ' ' : '') + ev.results[i][0].transcript.trim()); };
-    rec.onend = () => { rec = null; $('dictate').textContent = 'Dictate'; };
-    rec.start(); $('dictate').textContent = 'Stop dictating';
+    if (!window.isSecureContext) { hint.textContent = 'Dictation needs https or localhost. Open this page as http://127.0.0.1:8000/crew.'; return; }
+    let r;
+    try { r = new SR(); } catch (e) { hint.textContent = 'Could not start dictation: ' + e.message; return; }
+    r.lang = 'en-CA'; r.continuous = true; r.interimResults = true;
+    const base = note.value; let finalText = ''; failed = false;
+    r.onstart = () => { clearTimeout(watchdog); hint.textContent = 'Listening… speak now. Tap Stop dictating when finished.'; };
+    r.onresult = ev => {
+      let interim = '';
+      for (let i = ev.resultIndex; i < ev.results.length; i++) {
+        const t = ev.results[i][0].transcript;
+        if (ev.results[i].isFinal) finalText += (finalText ? ' ' : '') + t.trim(); else interim += t;
+      }
+      const spoken = (finalText + (interim ? (finalText ? ' ' : '') + interim : '')).trim();
+      note.value = (base + (base && spoken ? ' ' : '') + spoken).trim();
+    };
+    r.onerror = e => {
+      if (e.error === 'aborted') return;
+      failed = true; hint.textContent = DICT_ERRORS[e.error] || ('Dictation error: ' + e.error);
+    };
+    r.onend = () => { if (!failed && hint.textContent.startsWith('Listening')) hint.textContent = IDLE; reset(); };
+    rec = r; btn.textContent = 'Stop dictating'; hint.textContent = 'Starting the microphone…';
+    // some browsers expose the API but never start it: say so instead of hanging
+    watchdog = setTimeout(() => {
+      if (rec === r) {
+        try { r.abort(); } catch (_) {}
+        failed = true; reset();
+        hint.textContent = "Your browser did not start dictation (Brave, Firefox and plain Chromium often cannot). Use Chrome or Edge, or your keyboard's microphone key.";
+      }
+    }, 5000);
+    try { r.start(); } catch (e) { failed = true; reset(); hint.textContent = 'Could not start dictation: ' + e.message; }
   });
 }
 init().catch(e => document.querySelector('main').prepend(el('div', { class: 'banner', text: 'Could not load: ' + e.message })));

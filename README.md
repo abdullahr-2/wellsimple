@@ -224,4 +224,4 @@ OpenStreetMap tiles, Leaflet 1.9.4 and Chart.js 4.4.1 (loaded from CDNs).
   statistics only.
 - An optional local sentence-embedding model (MiniLM) is supported and was evaluated, but is not
   the default. The crew portal's Dictate button uses the browser's built-in speech recognition,
-  which may send audio to the browser vendor.
+  which may send audio to the browser vendor. Dictation works in Chrome and Edge (with microphone permission and an internet connection). Brave, Firefox and plain Chromium often expose the button but cannot start it, so the portal says so and points to the keyboard's own microphone key.
