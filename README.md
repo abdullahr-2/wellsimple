@@ -198,7 +198,10 @@ demo inputs, not field records.
 - `wellsimple/data.py`: cleaning (sensor placeholders and spikes removed), failure-to-job linking
   (98.5% of failures link to a repair job), repair outcomes (days to the next repair job).
 - `wellsimple/risk.py`: weekly snapshots of each producing well, 30-day and 7-day sensor
-  features, repair history, forward 30-day label; gradient-boosted trees.
+  features, repair history, forward 30-day label; gradient-boosted trees. On the same held-out split, scikit-learn
+  boosting (AUC 0.816), XGBoost (0.817) and LightGBM (0.816) are indistinguishable, and logistic regression
+  is lower (0.785), so we kept scikit-learn (no extra dependency, handles missing values natively); see
+  `scripts/compare_models.py`.
 - `wellsimple/notes.py`: "Well Memory", nearest-neighbour retrieval over repair-job notes
   (TF-IDF with SVD) with outcome statistics. Every answer is computed from real past jobs.
 - `wellsimple/crossmodal.py`: a random forest maps pre-failure sensor features into the crew-note
