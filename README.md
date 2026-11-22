@@ -11,8 +11,8 @@ Competition: DSMLC Canary x Chirality 2026 Datathon, Strathcona Resources case.
 **Team:** TBD (add member names here)
 **Research question and motivation:** see [PROBLEM_STATEMENT.md](PROBLEM_STATEMENT.md)
 **Solution form:** prototype AI/ML application
-**Video / slides:** TBD (links to be added before submission)
-
+**Slides:** https://www.canva.com/design/DAHbnTawanU/qvB8aHGXQ83KIqfmewKOVA
+**Video:**  https://youtu.be/rk2eHiXGtqk
 ## Summary of findings
 
 Every number below is produced by a script in this repo (`scripts/`) and uses time-ordered
