@@ -16,6 +16,7 @@ const moneyM = (v) => v == null ? '–' : '$' + (v / 1e6).toFixed(1) + 'M';  // 
 const pct = (v) => v == null ? '–' : Math.round(v * 100) + '%';
 const num = (v, d = 0) => v == null ? '–' : Number(v).toLocaleString('en-CA', { maximumFractionDigits: d });
 async function api(path, opts) {
+  if (typeof demoApi === 'function') return demoApi(path, opts);
   const r = await fetch(path, opts && opts.body ? { ...opts, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(opts.body) } : opts);
   if (!r.ok) {
     let msg = r.statusText;
@@ -24,6 +25,11 @@ async function api(path, opts) {
   }
   return r.json();
 }
+document.getElementById('reset-demo')?.addEventListener('click', () => {
+  localStorage.removeItem(demoKey);
+  localStorage.removeItem('queue');
+  location.reload();
+});
 function riskPill(p) {
   const c = p >= 0.4 ? 'hi' : p >= 0.2 ? 'mid' : 'lo';
   return el('span', { class: 'pill ' + c, text: pct(p) });

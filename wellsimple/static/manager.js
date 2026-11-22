@@ -157,6 +157,10 @@ function renderReliability() {
 
 async function loadPilot() {
   const box = document.getElementById('pilot');
+  if (typeof demoApi === 'function') {
+    box.replaceChildren(el('h3', {text: 'A/B pilot design'}), el('p', {text: 'The competition prototype compares repeat repairs over twelve months in two groups of wells. This public walkthrough uses fictional records. No trial outcomes are shown.'}));
+    return;
+  }
   let p;
   try { p = await api('/api/pilot'); } catch (e) { box.replaceChildren(el('div', { class: 'empty', text: 'No pilot built yet. Run scripts/build_pilot.py.' })); return; }
   const th = (...t) => el('tr', {}, ...t.map(x => el('th', { text: x })));

@@ -22,3 +22,4 @@ __pycache__/
 # App state created at runtime
 *.sqlite
 *.db
+dist-pages/
