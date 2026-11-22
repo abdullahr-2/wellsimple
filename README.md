@@ -4,7 +4,7 @@ A two-portal system that turns field crew knowledge and well sensor data into re
 
 - **Manager portal:** overview dashboard, ranked at-risk wells with reasons, job assignment, resolved wells.
 - **Crew portal (mobile-first):** assigned wells, precedent cases and diagnosis notes, map with the well and the crew's location, and a quick way to log what was done.
-- **Well Memory:** every crew note is stored as a vector alongside the sensor behavior before the job and the outcome after it, so each new failure can retrieve what worked before.
+- **Well Memory:** every repair note (about 14,000 from the job log, plus each note a crew submits) is stored as a vector with the outcome of that job (cost, how long the fix lasted), in an in-memory vector index searched by cosine similarity. A separate model links pre-failure sensor behavior to the notes. At this size exact search takes milliseconds, so no separate vector database is needed; the index is rebuilt at startup and crew notes are reloaded from the app's store.
 
 Competition: DSMLC Canary x Chirality 2026 Datathon, Strathcona Resources case.
 
