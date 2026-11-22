@@ -72,6 +72,10 @@ the app's filters (earlier jobs only, other wells only), using the stored vector
 (one query matched only 4 of 10), median 154 ms per query including the network round trip from a laptop. Chroma, the
 local vector database, scored 99.8% on the same kind of test.
 
+**Checked end to end on the hosted app (2026-11-21):** both portals load with no script errors or failed requests,
+and for 500 wells the risk scores the hosted app serves are identical to `gold_wells_scored` (difference 0), so the app
+runs the current 38-feature model exactly.
+
 ### Backups and rollback
 
 Before the first refresh, the app's previous tables were copied to `workspace.wellsimple.backup_facts_20261121`,
