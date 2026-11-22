@@ -21,7 +21,7 @@ class Statement {
 }
 const db = {prepare: sql => new Statement(sql), batch: batch => batch.map(s=>s.run())};
 if (!crypto.subtle.timingSafeEqual) crypto.subtle.timingSafeEqual = timingSafeEqual;
-const env = {DB:db, DEMO_PASSWORD:'test-secret'};
+const env = {DB:db, DEMO_PASSWORD:'test-secret', D1_TEST_ONLY:true};
 const base = 'https://demo.invalid';
 const request = (path, body) => worker.fetch(new Request(base+path,{
   method:body?'POST':'GET',headers:{Authorization:'Basic '+btoa('demo:test-secret'),'Content-Type':'application/json'},

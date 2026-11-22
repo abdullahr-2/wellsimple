@@ -18,6 +18,8 @@ def build():
     (DEST / "index.html").write_text(manager, encoding="utf-8")
     copyfile(STATIC / "crew.html", DEST / "crew" / "index.html")
     copyfile(ROOT / "pages" / "worker.js", DEST / "_worker.js")
+    for name in ("databricks.js", "databricks_api.js"):
+        copyfile(ROOT / "pages" / name, DEST / name)
     print(DEST)
 
 

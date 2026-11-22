@@ -1,4 +1,6 @@
-// The same two portals as FastAPI, backed by private D1 data and shared assignment state.
+import {databricksApi} from './databricks_api.js';
+
+// The same two portals as FastAPI, backed by Databricks when configured.
 const jsonHeaders = {'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'private, no-store'};
 const json = value => Response.json(value, {headers: jsonHeaders});
 const jsonText = text => new Response(text, {headers: jsonHeaders});
@@ -188,7 +190,11 @@ export default {
     }
     const url = new URL(request.url);
     try {
-      if (url.pathname.startsWith('/api/')) return await apiRequest(request,url,env);
+      if (url.pathname.startsWith('/api/')) {
+        if (env.DATABRICKS_CLIENT_SECRET) return await databricksApi(request,env);
+        if (env.D1_TEST_ONLY) return await apiRequest(request,url,env);
+        return Response.json({detail:'Databricks is not configured.'}, {status:503,headers:{'Cache-Control':'private, no-store'}});
+      }
       // Keep credentials out of asset subrequests and authenticated responses out of shared caches.
       const asset = await env.ASSETS.fetch(new Request(request.url, {method:request.method}));
       const result = new Response(asset.body,asset);
