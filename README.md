@@ -204,7 +204,7 @@ not running: keep that window open, and try `http://127.0.0.1:8000/` instead.
    <http://localhost:8000/crew> (use a phone on the same network for the real mobile view).
 
 **Rerun everything with one command:** `python scripts/run_all.py` runs the tests, builds the tables and the
-pilot, and runs every evaluation (about 15 to 20 minutes), saving each report to `WORK_DIR/reports/`.
+pilot, and runs every evaluation (about 8 to 10 minutes on a laptop), saving each report to `WORK_DIR/reports/`.
 Individual evaluations: `eval_risk.py`, `explain_risk.py`, `eval_physics.py`, `eval_precedent.py`,
 `eval_crossmodal.py`, `eval_savings_levers.py`, `trial_power.py`, `compare_models.py` (needs the optional
 `xgboost` and `lightgbm`). Tests: `python -m pytest`.

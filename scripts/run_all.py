@@ -2,7 +2,7 @@
 
 Usage:  DATA_DIR=... python scripts/run_all.py
 Reports are written to WORK_DIR/reports/ (git-ignored, since they summarise restricted data).
-Takes roughly 15 to 20 minutes on a laptop.
+Takes about 8 to 10 minutes on a laptop (measured: 8 minutes).
 """
 import importlib.util
 import os
