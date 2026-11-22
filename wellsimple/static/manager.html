@@ -43,6 +43,12 @@
 
   <section id="tab-wells" class="hidden">
     <div class="card" style="margin-bottom:14px">
+      <div id="modelPanel" hidden>
+        <h3>30-day repair model</h3>
+        <p id="modelSource" class="small"></p>
+        <button class="primary" id="runModel" type="button">Score producing wells</button>
+        <span id="modelResult" class="small" role="status"></span>
+      </div>
       <div class="row">
         <div><label class="f" for="sort" style="margin-top:0">Priority</label>
           <select id="sort">

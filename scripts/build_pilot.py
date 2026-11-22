@@ -30,7 +30,7 @@ def main():
     status_day = daily.loc[daily["well_daily_status"].notna(), "production_date"].max()
     today = daily[daily["production_date"] == status_day]
     producing = set(today.loc[today["well_daily_status"] == "Producing", "uwi"])
-    meta = today.set_index("uwi")[["well_name", "field_operating_area"]]
+    meta = today.drop_duplicates("uwi", keep="last").set_index("uwi")[["well_name", "field_operating_area"]]
 
     base0 = abtest.well_repeat_counts(rep, producing, end, 0)   # the 12 months before enrollment
     base1 = abtest.well_repeat_counts(rep, producing, end, 1)   # the 12 months before that

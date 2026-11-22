@@ -5,6 +5,13 @@ const lossKey = () => 'expected_loss_' + scenario();
 async function loadAll() {
   const [ov, crews] = await Promise.all([api('/api/overview'), api('/api/crews')]);
   S.overview = ov; S.crews = crews;
+  document.getElementById('modelPanel').hidden = !ov.model;
+  if (ov.model) {
+    document.getElementById('modelSource').textContent = 'Gradient-boosted trees trained on ' +
+      num(ov.model.training_snapshots) + ' weekly snapshots from ' + num(ov.model.daily_rows) +
+      ' daily records and ' + num(ov.model.job_rows) + ' jobs. Each prediction uses ' + ov.model.features +
+      ' sensor and repair-history features as of ' + ov.model.snapshot_date + '. The target includes scheduled repairs.';
+  }
   document.getElementById('asof').textContent = 'Data as of ' + ov.as_of;
   const origin = document.getElementById('origin');
   origin.replaceChildren(el('option', { value: '', text: 'Fleet centre' }),
@@ -40,10 +47,12 @@ function renderOverviewCharts() {
     options: { indexAxis: 'y', plugins: { legend: { display: false } } } }));
 }
 
-async function loadWells() {
+async function loadWells(rescore = false) {
   const q = new URLSearchParams({ sort: document.getElementById('sort').value, min_risk: document.getElementById('minrisk').value, limit: 30 });
+  if (rescore === true) q.set('rescore', 'true');
   const crew = document.getElementById('origin').value; if (crew) q.set('crew_id', crew);
-  const r = await api('/api/wells?' + q);
+  const r = rescore === true && typeof scoreHostedWells === 'function'
+    ? await scoreHostedWells(q) : await api('/api/wells?' + q);
   S.wells = r.wells;
   const t = document.getElementById('wellsTable');
   const head = el('tr', {}, ...['Well', 'Risk', 'Expected loss', 'Why flagged', 'km', 'Assign'].map(h => el('th', { text: h })));
@@ -65,6 +74,7 @@ async function loadWells() {
   t.replaceChildren(head, ...rows);
   if (!rows.length) t.replaceChildren(el('tr', {}, el('td', { class: 'empty', text: 'No wells match.' })));
   drawMap();
+  return r;
 }
 
 function drawMap() {
@@ -128,6 +138,19 @@ document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () =>
   if (b.dataset.tab === 'wells' && S.map) fitMap();
 }));
 ['sort', 'origin', 'minrisk'].forEach(id => document.getElementById(id).addEventListener('change', loadWells));
+document.getElementById('runModel').addEventListener('click', async () => {
+  const button = document.getElementById('runModel'), status = document.getElementById('modelResult');
+  button.disabled = true;
+  status.textContent = 'Running inference on the fleet…';
+  document.getElementById('sort').value = 'risk';
+  document.getElementById('minrisk').value = '0.4';
+  try {
+    const r = await loadWells(true);
+    status.textContent = num(r.scored_wells) + ' wells scored. ' + num(r.high_risk_wells) +
+      ' reached 40% repair probability. Showing ' + r.wells.length + ' available wells in risk order.';
+  } catch (e) { status.textContent = 'Scoring failed. ' + e.message; }
+  finally { button.disabled = false; }
+});
 document.getElementById('scenario').addEventListener('change', () => { renderKpis(); loadWells(); loadAssignments('assigned', 'assignedTable', ASSIGNED_COLS); });
 refresh().catch(e => { document.querySelector('main').prepend(el('div', { class: 'banner', text: 'Could not load data: ' + e.message })); });
 
@@ -157,10 +180,6 @@ function renderReliability() {
 
 async function loadPilot() {
   const box = document.getElementById('pilot');
-  if (typeof demoApi === 'function') {
-    box.replaceChildren(el('h3', {text: 'A/B pilot design'}), el('p', {text: 'The competition prototype compares repeat repairs over twelve months in two groups of wells. This public walkthrough uses fictional records. No trial outcomes are shown.'}));
-    return;
-  }
   let p;
   try { p = await api('/api/pilot'); } catch (e) { box.replaceChildren(el('div', { class: 'empty', text: 'No pilot built yet. Run scripts/build_pilot.py.' })); return; }
   const th = (...t) => el('tr', {}, ...t.map(x => el('th', { text: x })));

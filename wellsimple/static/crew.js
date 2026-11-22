@@ -10,8 +10,9 @@ function km(a, b, c, d) {
 }
 
 // ---- offline queue: submissions made without signal are kept and retried ----
-const queue = () => { try { return JSON.parse(localStorage.getItem('queue') || '[]'); } catch (_) { return []; } };
-const saveQueue = (q) => localStorage.setItem('queue', JSON.stringify(q));
+const queueKey = 'wellsimple.competition.queue';
+const queue = () => { try { return JSON.parse(localStorage.getItem(queueKey) || '[]'); } catch (_) { return []; } };
+const saveQueue = (q) => localStorage.setItem(queueKey, JSON.stringify(q));
 function showQueue() { const n = queue().length; $('queueStatus').textContent = n ? n + ' waiting to send' : ''; }
 async function flushQueue() {
   const rest = [];

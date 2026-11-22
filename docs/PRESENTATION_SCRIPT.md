@@ -81,9 +81,9 @@ For the **five-minute video**, read the named speaker lines and follow the itali
 
 *Return to the same well in Resolved, then open A/B pilot. Let the audience see the two group sizes. Finish on the logo.*
 
-**Finalist · Uzair:** We checked whether the pilot could detect a change at this scale. With about a hundred and eighty-four wells per group, simulations detected a fifty percent reduction about ninety-six percent of the time. They detected a twenty percent reduction only about twenty-two percent of the time. A modest improvement would take more wells or longer follow-up to establish.
+**Finalist · Uzair:** We checked whether the pilot could detect a change at this scale. With about a hundred and eighty-three wells per group, simulations detected a fifty percent reduction about ninety-six percent of the time. They detected a twenty percent reduction only about twenty-four percent of the time. A modest improvement would take more wells or longer follow-up to establish.
 
-**Hassaan:** We started with a crew going back to the same well. You’ve seen what we can put in their hands before that visit. The next question is whether it changes how often they have to go back. Our prototype assigned 370 historical wells to two pilot groups, 186 for WellSimple and 184 for usual practice. We’re asking for a twelve-month field pilot. Count repeat repairs per well in both groups, then let that result guide the rollout. Thank you.
+**Hassaan:** We started with a crew going back to the same well. You’ve seen what we can put in their hands before that visit. The next question is whether it changes how often they have to go back. Our prototype assigned 369 historical wells to two pilot groups, 186 for WellSimple and 183 for usual practice. We’re asking for a twelve-month field pilot. Count repeat repairs per well in both groups, then let that result guide the rollout. Thank you.
 
 ---
 

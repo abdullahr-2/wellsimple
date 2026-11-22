@@ -57,7 +57,7 @@ Keep the word "potentially" and the "depending on" clause. Do not say "will save
 5. **How it works (1:30).** Three parts: risk model, Well Memory (retrieval over crew notes, no
    generative model), sensors-to-notes model. One slide of test results with held-out numbers.
 6. **Money, the pilot and honesty (1:30).** Show exposure vs the measured repeat pool. Say we looked for a
-   measurable saving in three places and found two empty and one unconfirmed. Then the A/B pilot tab: 370 repeat-prone wells randomized into 186 system and 184 control, balanced at the start, pre-specified analysis, and a test that was validated on real history (4.0% false positives with no intervention). Be explicit that no result exists yet and that we will not simulate one. Exposure range and the assumptions. Then limitations: the 22-month
+   measurable saving in three places and found two empty and one unconfirmed. Then the A/B pilot tab: 369 repeat-prone wells randomized into 186 system and 183 control, with baseline balance shown, pre-specified analysis, and a test that was validated on real history (4.0% false positives with no intervention). Be explicit that no result exists yet and that we will not simulate one. Exposure range and the assumptions. Then limitations: the 22-month
    failure log, moderate cross-modal accuracy, planned work in the label.
 7. **Next steps (0:30).** Follow-up "did the fix hold?" prompts, Canary Historian live feed, trial on
    one field.

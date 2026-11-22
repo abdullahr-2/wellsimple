@@ -1,0 +1,8 @@
+name = "holize-wellsimple"
+pages_build_output_dir = "./dist-pages/site"
+compatibility_date = "2026-11-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "wellsimple-competition"
+database_id = "c43841a4-9b5c-4660-9eec-2fad3256d446"

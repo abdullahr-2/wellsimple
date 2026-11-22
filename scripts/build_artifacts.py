@@ -14,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import numpy as np
 import pandas as pd
+import joblib
 
 from wellsimple import config, crossmodal, data, notes, reliability, risk, scoring
 
@@ -96,6 +97,12 @@ def main():
     repeat90 = float((rep.sort_values(["uwi", "start_date"]).groupby("uwi")["start_date"].diff().dt.days <= 90).mean())
     overview = {
         "as_of": str(daily["production_date"].max().date()),
+        "model": {
+            "name": type(model).__name__,
+            "snapshot_date": str(latest["production_date"].max().date()),
+            "daily_rows": len(daily), "job_rows": len(jobs),
+            "training_snapshots": len(snaps), "features": len(feats),
+        },
         "producing_wells": int(len(wells)),
         "high_risk_wells": int((wells["p_repair"] >= 0.4).sum()),
         "expected_loss_low": float(wells["expected_loss_low"].sum()),
@@ -120,6 +127,7 @@ def main():
         "pareto": reliability.job_type_pareto(rt).to_dict("records"),
         "repeat_spend": [reliability.repeat_spend(rep, d) for d in (30, 90)],
     }
+    joblib.dump(model, config.WORK_DIR / "repair_model.joblib")
     (config.WORK_DIR / "overview.json").write_text(json.dumps(overview, indent=2, default=float))
     print(f"wrote {len(wells)} wells; expected 30-day loss ${overview['expected_loss_low']:,.0f} to ${overview['expected_loss_mid']:,.0f}")
 

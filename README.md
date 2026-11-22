@@ -41,7 +41,7 @@ Caveat: the next job on a well can be a planned follow-up visit, so some early r
 
 **Money.** Three different numbers, kept separate on purpose.
 
-1. *Exposure (modelled).* As of 2026-10-27 the 1,338 producing wells carry an expected 30-day cost
+1. *Exposure (modelled).* As of 2026-10-27 the 1,336 distinct producing wells carry an expected 30-day cost
    of about **$3.8M (conservative) to $4.6M (mid)**: each well's repair probability times (the
    average repair cost, $17,461, plus the oil lost during a repair). About $3.0M of that is job
    cost and $0.8M to $1.6M is lost oil. Only the oil part depends on the barrel price (valued at
@@ -93,20 +93,20 @@ repeat pool is about $1.4M a year (field-estimated repair spend, before oil).
 Savings are measured by an experiment, so we built one. `python scripts/build_pilot.py` enrolls and
 randomizes real wells, and the manager portal's **A/B pilot** tab shows the plan and status.
 
-- **Population:** the 370 producing wells that had at least one repeat repair in the last 12 months
+- **Population:** the 369 producing wells that had at least one repeat repair in the last 12 months
   (a repair job within 30 days of the previous one on the same well).
-- **Arms:** 186 "system" wells (the portal recommends and tracks action) and 184 "control" wells (usual
+- **Arms:** 186 "system" wells (the portal recommends and tracks action) and 183 "control" wells (usual
   practice). Assignment is random within field and baseline-repeat strata with a fixed seed (2026).
   Setting `PILOT_MODE=1` hides control wells from the manager list so the experiment is not contaminated.
-- **Balance:** the arms match at enrollment on baseline repeats (standardized difference -0.09), prior-year
-  repeats (-0.10), repairs in 12 months (-0.03) and oil rate (+0.04).
+- **Balance:** standardized differences at enrollment are -0.10 for baseline repeats, -0.13 for prior-year
+  repeats, -0.01 for repairs in 12 months and +0.09 for oil rate. Prior-year repeats exceed the 0.10 balance threshold.
 - **Pre-specified analysis:** primary outcome is repeat repairs per well over 12 months; rate ratio with a
   permutation p-value and a bootstrap interval; one read at 12 months, no peeking.
 - **The test is validated on real history (A/A check):** randomizing 404 real repeat-prone wells 200 times
   with no intervention, the analysis wrongly reported a difference 4.0% of the time (95% interval 1.3% to
   6.7%), which is the expected 5%. So it does not invent effects. Unit tests also confirm it detects and
   brackets a known 50% effect.
-- **Power at 184 wells per arm:** 22% for a 20% cut, 50% for a 30% cut, 96% for a 50% cut; the smallest
+- **Power at 183 wells per arm:** 24% for a 20% cut, 50% for a 30% cut, 96% for a 50% cut; the smallest
   effect with 80% power is 50%. Smaller effects need a longer pilot or more wells.
 - **Result:** the measured result reads out 12 months after enrollment (first read 2027-10-26) and will
   replace the potential figures. Until then, the potential is about $5.0M a year at a 30% cut in repeat
@@ -157,9 +157,19 @@ the reduction. Applying a reduction in all PCP failures to the 30-day repeat poo
 - Job costs are field estimates, about 16% of repair jobs have a cost of zero or less (treated
   as missing), and barrel price and lost-oil allowance are assumptions.
 - Notes the crews submit in the app are added to memory but do not retrain the
-  risk model. The app has no login, and submissions made in it are demo inputs.
+  risk model. The local app has no login. The hosted competition demo requires a presenter login. Submissions are demo inputs.
 
 ## Setup and run
+
+### Hosted competition demo
+
+Open [WellSimple](https://wellsimple.holize.ca), sign in with the presenter credentials, select **At-risk wells**, and click **Score producing wells**. The browser runs the trained gradient-boosted trees on the actual fleet snapshot and ranks available wells by their 30-day repair probability. Select a well for related historical jobs and sensor-based component estimates. Assignments and crew submissions are shared across signed-in devices. The A/B pilot tab reports enrollment, baseline balance and statistical power.
+
+The three source Parquet files are used locally. The hosted API reads model inputs, fitted tree parameters, retrieval results, and pilot statistics from the private D1 database bound in `wrangler.toml`. The production Pages secret `DEMO_PASSWORD` controls access for the username `demo`. The build directory contains only application code and static assets.
+
+To reproduce an authorized competition deployment, build the local artifacts and pilot, run `python scripts/export_pages_data.py`, then `node scripts/verify_pages.mjs` with Node 22.13 or later. Import the resulting private SQL with `wrangler d1 execute wellsimple-competition --remote --file artifacts/competition-import.sql --yes`. Run `python scripts/build_pages.py` and deploy `dist-pages/site` to the production branch of `holize-wellsimple`. The scored fleet and pilot use one entry per well identifier, including wells with repeated rows on the last reporting day.
+
+### Local Python demo
 
 The competition dataset is not included and must not be shared or committed. Extract it
 locally (the folder with the three `.parquet` files) and point the project at it:
@@ -189,7 +199,7 @@ not running: keep that window open, and try `http://127.0.0.1:8000/` instead.
 Evaluation scripts (time-ordered backtests): `python scripts/eval_risk.py`,
 `python scripts/eval_precedent.py`. Tests: `python -m pytest`.
 
-The app has no login. It is a demo, and assignments and crew submissions made in it are
+The local app has no login. Assignments and crew submissions made in it are
 demo inputs, not field records.
 
 ## Methods, validation, external resources, AI disclosure

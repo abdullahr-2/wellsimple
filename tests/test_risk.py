@@ -44,3 +44,10 @@ def test_snapshots_near_end_of_data_are_dropped():
     daily = _daily(60)
     snap = risk.build_snapshots(daily, pd.DataFrame({"uwi": [], "start_date": []}), step=1, horizon=30)
     assert snap.production_date.max() <= daily.production_date.max() - pd.Timedelta(days=30)
+
+
+def test_latest_snapshot_scores_each_well_once_on_a_duplicate_reporting_day():
+    daily = _daily()
+    duplicated = pd.concat([daily, daily.tail(1)], ignore_index=True)
+    snap = risk.latest_snapshot(duplicated, pd.DataFrame({"uwi": [], "start_date": []}))
+    assert snap.uwi.tolist() == ["w1"]

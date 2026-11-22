@@ -17,7 +17,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import config, geo, notes, store as store_mod
+from . import config, geo, notes, risk, store as store_mod
 
 STATIC = Path(__file__).parent / "static"
 DEMO_CREWS = [("crew-1", "Crew 1"), ("crew-2", "Crew 2"), ("crew-3", "Crew 3"), ("crew-4", "Crew 4")]
@@ -45,7 +45,7 @@ class CompleteIn(BaseModel):
 
 
 def _clean(v):
-    if v is None or (isinstance(v, float) and not np.isfinite(v)):
+    if v is None or v is pd.NaT or v is pd.NA or (isinstance(v, float) and not np.isfinite(v)):
         return None
     if isinstance(v, (pd.Timestamp,)):
         return None if pd.isna(v) else v.date().isoformat()
@@ -62,7 +62,7 @@ def _rows(df: pd.DataFrame) -> list[dict]:
 
 def create_app(wells: pd.DataFrame, overview: dict, memory: notes.WellMemory,
                store: store_mod.Store, pilot: dict | None = None, pilot_wells: pd.DataFrame | None = None,
-               hide_control: bool = False) -> FastAPI:
+               hide_control: bool = False, repair_model=None) -> FastAPI:
     app = FastAPI(title="WellSimple")
     wells = wells.copy().reset_index(drop=True)
     by_uwi = {u: i for i, u in enumerate(wells["uwi"])}
@@ -86,8 +86,17 @@ def create_app(wells: pd.DataFrame, overview: dict, memory: notes.WellMemory,
     @app.get("/api/wells")
     def list_wells(sort: SortMode = "loss", crew_id: str | None = None,
                    min_risk: float = Query(0.0, ge=0, le=1), limit: int = Query(50, ge=1, le=500),
-                   include_assigned: bool = False):
-        df = wells[wells["p_repair"] >= min_risk].copy()
+                   include_assigned: bool = False, rescore: bool = False):
+        df = wells.copy()
+        if rescore:
+            if repair_model is None:
+                raise HTTPException(503, "Rebuild the model with scripts/build_artifacts.py.")
+            features = risk.SENSOR_FEATURES + risk.HISTORY_FEATURES
+            df["p_repair"] = repair_model.predict_proba(df[features])[:, 1]
+            for scenario in ("low", "mid"):
+                df[f"expected_loss_{scenario}"] = df["p_repair"] * df[f"event_cost_{scenario}"]
+        n_high_risk = int((df["p_repair"] >= 0.4).sum())
+        df = df[df["p_repair"] >= min_risk]
         hidden = store.resolved_uwis() | (set() if include_assigned else store.open_uwis())
         if hide_control and pilot_wells is not None:  # pilot mode: control wells are not surfaced (usual practice)
             hidden |= set(pilot_wells.loc[pilot_wells["arm"] == "control", "uwi"])
@@ -100,7 +109,8 @@ def create_app(wells: pd.DataFrame, overview: dict, memory: notes.WellMemory,
         cols = ["uwi", "well_name", "field_operating_area", "surface_latitude", "surface_longitude", "p_repair",
                 "expected_loss_low", "expected_loss_mid", "event_cost_mid", "reasons", "distance_km",
                 "precedent_life_days", "precedent_cost_per_day"]
-        return {"sort": sort, "distance_from": label, "wells": _rows(df[cols])}
+        return {"sort": sort, "distance_from": label, "wells": _rows(df[cols]),
+                "scored_wells": len(wells), "high_risk_wells": n_high_risk}
 
     @app.get("/api/wells/{uwi}")
     def well_detail(uwi: str, k: int = Query(5, ge=1, le=15)):
@@ -202,9 +212,12 @@ def create_app(wells: pd.DataFrame, overview: dict, memory: notes.WellMemory,
 def load_app() -> FastAPI:
     """Build the app from the artifacts and dataset configured in the environment."""
     from . import data
+    import joblib
 
     wells = pd.read_parquet(config.WORK_DIR / "wells.parquet")
     overview = json.loads((config.WORK_DIR / "overview.json").read_text())
+    # Only load the trusted artifact produced by the local training pipeline.
+    model = joblib.load(config.WORK_DIR / "repair_model.joblib") if "model" in overview else None
     rep = data.add_job_outcomes(data.load_jobs())
     memory = notes.WellMemory(notes.TfidfEncoder()).build(rep)
     config.WORK_DIR.mkdir(parents=True, exist_ok=True)
@@ -214,4 +227,4 @@ def load_app() -> FastAPI:
         pilot_wells = pd.read_parquet(config.WORK_DIR / "pilot.parquet")
     # PILOT_MODE=1 hides control-arm wells from the manager list, which is what makes it a real experiment
     return create_app(wells, overview, memory, store_mod.Store(config.WORK_DIR / "state.sqlite"),
-                      pilot, pilot_wells, hide_control=os.environ.get("PILOT_MODE") == "1")
+                      pilot, pilot_wells, hide_control=os.environ.get("PILOT_MODE") == "1", repair_model=model)

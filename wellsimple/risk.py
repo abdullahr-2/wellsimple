@@ -79,7 +79,8 @@ def latest_snapshot(daily: pd.DataFrame, repairs: pd.DataFrame) -> pd.DataFrame:
     # so use the latest day on which any well has a status
     last_day = feats.loc[feats["well_daily_status"].notna(), "production_date"].max()
     snap = feats[(feats["production_date"] == last_day) & (feats["well_daily_status"] == "Producing")]
-    snap = snap.reset_index(drop=True)
+    # A few wells have two rows on the final status day. Dispatch once per identifier.
+    snap = snap.drop_duplicates("uwi", keep="last").reset_index(drop=True)
     snap = _history_and_label(snap, repairs.dropna(subset=["start_date"]), 30)
     return snap.drop(columns="label")
 
