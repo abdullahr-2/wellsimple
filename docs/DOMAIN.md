@@ -70,9 +70,19 @@ A Weibull model of the time between repairs (right-censored at the end of the da
 (95% CI 0.60 to 0.62). Below 1 means the hazard falls with time since the fix: rod-truck jobs are about 10 times
 likelier to need another visit in the first week (3.0% per day) than 6 to 12 months later (0.28% per day).
 
+**Is it real, or just bad wells failing first?** Mixing wells that fail constantly with wells that rarely fail can
+make a whole fleet look like "risk falls with time", because the bad wells drop out early. We checked
+[eval_reliability.py]: within groups of similarly repair-prone wells the shape stays below 1 (0.62, 0.66, 0.71 and 0.79
+for wells with 1 to 3, 4 to 8, 9 to 20 and 21+ repairs), and comparing each well only with itself gives k = 0.71 (95% CI
+0.70 to 0.73). So the early-failure effect is real; mixing wells only makes it look somewhat stronger (0.61). The likely
+causes are the ones a field crew would name: the root cause not being fixed (rods replaced but the sand or the pump size
+was the problem), installation problems (connections, damaged rods, rotor spacing, starting dry) and new parts settling
+in. The chronic wells (21+ repairs) are closest to constant risk, which points to the well itself needing a redesign.
+
 The engineering consequence: the classic age-replacement policy (Barlow and Proschan) only pays when the hazard
 rises with age (k > 1). Here, replacing equipment that is still running would put it back into the riskiest period,
-so the money is in making each repair last, not in scheduled replacement. This matches published practice: the
+so the money is in making each repair last, and in watching wells closely in the first weeks after a repair
+(scheduled inspection, not scheduled replacement). This matches published practice: the
 root-cause failure analysis program described in IPTC 17230 (Chad) aimed its Extended Run Life Team at short runs
 under 90 days and repeat failures within 365 days, and reported PCP failure frequency falling from 0.47 to 0.21
 between 2007 and 2013 (uncontrolled before/after, not peer reviewed) [ref 1].

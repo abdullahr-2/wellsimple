@@ -50,7 +50,11 @@ between repair jobs (right-censored at the end of the data) gives a shape of k =
 and falls with time: rod-truck jobs are about 10 times likelier to need another visit in the first
 week (3.0% per day) than 6 to 12 months later (0.28% per day). Classic age-based replacement only
 pays when k is above 1, so scheduled replacement of running equipment would not pay here; the saving
-is in making each repair last. By crew job type, rod repairs repeat within 30 days 44% to 50% of the
+is in making each repair last. This is not just bad wells failing first: within groups of similarly
+repair-prone wells k is 0.62 to 0.79, and comparing each well with itself k = 0.71 (95% CI 0.70 to 0.73)
+(`scripts/eval_reliability.py`). Likely causes are the root cause not being fixed, installation problems
+and new parts settling in. What pays: getting the repair right, watching wells closely in the first weeks
+after a repair, and redesigning the chronic wells (the 21+ repair wells are closest to constant risk, k = 0.79). By crew job type, rod repairs repeat within 30 days 44% to 50% of the
 time (median fix lasts 31 to 38 days), against 14% to 20% for pump replacement (median 114 to 134 days).
 Caveat: the next job on a well can be a planned follow-up visit, so some early risk is return trips.
 

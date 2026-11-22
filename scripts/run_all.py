@@ -22,6 +22,7 @@ STEPS = [
     ("eval_risk", [sys.executable, "scripts/eval_risk.py"]),
     ("explain_risk", [sys.executable, "scripts/explain_risk.py"]),
     ("eval_physics", [sys.executable, "scripts/eval_physics.py"]),
+    ("eval_reliability", [sys.executable, "scripts/eval_reliability.py"]),
     ("eval_precedent", [sys.executable, "scripts/eval_precedent.py"]),
     ("eval_crossmodal", [sys.executable, "scripts/eval_crossmodal.py"]),
     ("eval_savings_levers", [sys.executable, "scripts/eval_savings_levers.py"]),
