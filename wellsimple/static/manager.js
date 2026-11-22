@@ -188,7 +188,6 @@ async function loadPilot() {
   const pw = p.power.by_effect_percent;
   box.replaceChildren(
     el('h3', { style: 'margin-top:0', text: 'A/B pilot: how we will measure the saving' }),
-    el('div', { class: 'banner', text: 'Status: ' + p.status + '. Enrolled on ' + p.enrolled_as_of + '; first read ' + p.earliest_read + '. ' + p.outcome_note }),
     pilotLine('Who', p.population),
     pilotLine('System arm (' + p.n_system + ' wells)', p.arms.system),
     pilotLine('Control arm (' + p.n_control + ' wells)', p.arms.control + (p.pilot_mode ? ' (hidden from this manager view while the pilot runs)' : '')),
