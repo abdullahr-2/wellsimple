@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import numpy as np
 import pandas as pd
 
-from wellsimple import config, crossmodal, data, notes, reliability, risk, scoring
+from wellsimple import config, crossmodal, data, evaluation, notes, physics, reliability, risk, scoring
 
 META = ["uwi", "production_date", "well_name", "field_operating_area", "facility_name",
         "surface_latitude", "surface_longitude"]
@@ -23,17 +23,18 @@ META = ["uwi", "production_date", "well_name", "field_operating_area", "facility
 
 def main():
     config.WORK_DIR.mkdir(parents=True, exist_ok=True)
-    cols = ["uwi", "production_date", "well_daily_status", "downtime_code_1"] + data.SENSOR_COLS
+    cols = ["uwi", "production_date", "well_daily_status", "downtime_code_1", "pcp_pump_displacement_m3d100rpm"] + data.SENSOR_COLS
     daily = data.load_daily(cols)
     jobs = data.load_jobs()
     rep = data.add_job_outcomes(jobs)
     repairs = rep[["uwi", "start_date"]]
 
     print("training risk model ...")
-    snaps = risk.build_snapshots(daily, repairs, step=7, horizon=30)
+    phys = physics.physics_features(daily, repairs)  # PCP physics: efficiency drop, torque, fatigue index
+    snaps = risk.build_snapshots(daily, repairs, step=7, horizon=30).merge(phys, on=["uwi", "production_date"], how="left")
     model = scoring.fit_model(snaps)
-    latest = risk.latest_snapshot(daily, repairs)
-    feats = risk.SENSOR_FEATURES + risk.HISTORY_FEATURES
+    latest = risk.latest_snapshot(daily, repairs).merge(phys, on=["uwi", "production_date"], how="left")
+    feats = scoring.MODEL_FEATURES
     latest["p_repair"] = model.predict_proba(latest[feats])[:, 1]
 
     meta = pd.read_parquet(config.DAILY, columns=META)
@@ -120,6 +121,22 @@ def main():
         "pareto": reliability.job_type_pareto(rt).to_dict("records"),
         "repeat_spend": [reliability.repeat_spend(rep, d) for d in (30, 90)],
     }
+    # ---- model quality on a held-out period (time-ordered), for the portal and README ----
+    print("evaluating on the held-out period ...")
+    field_of = meta.set_index("uwi")["field_operating_area"].to_dict()
+    overview["model_quality"] = evaluation.holdout_report(snaps, scoring.MODEL_FEATURES, field_of, pd.Timestamp("2025-07-01"))
+
+    # ---- concentration: how much of the repair work sits on the worst wells ----
+    def concentration(counts):
+        c = np.sort(counts.to_numpy())[::-1]
+        cum = np.cumsum(c) / c.sum()
+        pts = [{"wells_pct": p, "jobs_pct": float(cum[max(0, int(np.ceil(len(c) * p / 100)) - 1)])} for p in range(1, 101)]
+        return {"wells": int(len(c)), "points": pts, "top10_share": float(cum[int(np.ceil(len(c) * 0.10)) - 1])}
+    overview["concentration"] = {
+        "all_repairs": concentration(rep.groupby("uwi").size()),
+        "rod_truck": concentration(rep[rep["job_category"] == "Rod Truck"].groupby("uwi").size()),
+    }
+
     (config.WORK_DIR / "overview.json").write_text(json.dumps(overview, indent=2, default=float))
     print(f"wrote {len(wells)} wells; expected 30-day loss ${overview['expected_loss_low']:,.0f} to ${overview['expected_loss_mid']:,.0f}")
 

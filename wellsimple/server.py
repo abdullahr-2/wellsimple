@@ -84,7 +84,7 @@ def create_app(wells: pd.DataFrame, overview: dict, memory: notes.WellMemory,
                 "resolved_count": sum(x["status"] == "resolved" for x in a)}
 
     @app.get("/api/wells")
-    def list_wells(sort: SortMode = "loss", crew_id: str | None = None,
+    def list_wells(sort: SortMode = "loss", crew_id: str | None = None, scenario: Literal["low", "mid"] = "mid",
                    min_risk: float = Query(0.0, ge=0, le=1), limit: int = Query(50, ge=1, le=500),
                    include_assigned: bool = False):
         df = wells[wells["p_repair"] >= min_risk].copy()
@@ -94,12 +94,13 @@ def create_app(wells: pd.DataFrame, overview: dict, memory: notes.WellMemory,
         df = df[~df["uwi"].isin(hidden)]
         lat0, lon0, label = origin(crew_id)
         df["distance_km"] = geo.haversine_km(lat0, lon0, df["surface_latitude"], df["surface_longitude"])
-        key = {"loss": ("expected_loss_mid", False), "risk": ("p_repair", False),
+        key = {"loss": (f"expected_loss_{scenario}", False), "risk": ("p_repair", False),
                "closest": ("distance_km", True), "furthest": ("distance_km", False)}[sort]
         df = df.sort_values(key[0], ascending=key[1], na_position="last").head(limit)
         cols = ["uwi", "well_name", "field_operating_area", "surface_latitude", "surface_longitude", "p_repair",
                 "expected_loss_low", "expected_loss_mid", "event_cost_mid", "reasons", "distance_km",
                 "precedent_life_days", "precedent_cost_per_day"]
+        cols += [c for c in ("p_pump", "p_rods", "p_tubing") if c in df.columns]
         return {"sort": sort, "distance_from": label, "wells": _rows(df[cols])}
 
     @app.get("/api/wells/{uwi}")

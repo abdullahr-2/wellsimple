@@ -116,3 +116,11 @@ def test_pilot_endpoint_and_control_wells_hidden_only_in_pilot_mode():
     piloting = TestClient(server.create_app(_wells(), {}, _memory(), store_mod.Store(), plan, pw, hide_control=True))
     assert "w2" not in uwis(piloting.get("/api/wells")) and "w1" in uwis(piloting.get("/api/wells"))
     assert TestClient(server.create_app(_wells(), {}, _memory(), store_mod.Store())).get("/api/pilot").status_code == 404
+
+
+def test_loss_sort_follows_the_selected_price_scenario():
+    w = _wells()
+    w.loc[w.uwi == "w1", ["expected_loss_low", "expected_loss_mid"]] = [900.0, 100.0]  # ranks differ by scenario
+    c = TestClient(server.create_app(w, {}, _memory(), store_mod.Store()))
+    assert uwis(c.get("/api/wells?sort=loss&scenario=low"))[0] == "w1"
+    assert uwis(c.get("/api/wells?sort=loss&scenario=mid"))[0] == "w2"
