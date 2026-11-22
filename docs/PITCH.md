@@ -102,6 +102,11 @@ demo screens, not slides, for minutes 2 to 4. State AI use in the last 10 second
   year of repeat-repair spend; each 10% prevented is about $1.4M a year. A 12-month pilot on 100 to 150
   repeat-prone wells per arm would measure a 50% reduction with 76% to 92% power; smaller effects need a longer
   trial. That plan is the deliverable.
+- **Does the vector database scale?** We measured it. On the real notes Chroma returns the same top 10 as exact search
+  99.8% of the time. For speed, exact search stays in milliseconds well past any realistic note count (18 ms at 500,000);
+  Chroma's approximate index got slower and less accurate with our filters at that size on random vectors. So we use the
+  database for what it is good at here (a durable, shareable store) and would move to Databricks Vector Search or pgvector
+  in production, choosing exact or tuned search by measured recall.
 - **Where does the dollar figure come from?** Average repair cost ($17,461, capped at the 99th percentile)
   from the data's field estimates, lost oil per repair event measured from downtime codes, oil valued at
   $32.50 or $61.60 a barrel from Strathcona's Q3 2026 release. Only the oil part depends on price. It is

@@ -72,7 +72,7 @@ def create_app(wells: pd.DataFrame, overview: dict, memory: notes.WellMemory,
         text = ((a.get("work_done") or "").replace("; ", " ") + " . " + (a.get("crew_note") or "")).strip(" .")
         if len(text) >= 3:
             when = pd.Timestamp(a["resolved_at"]).tz_convert(None).normalize() if a.get("resolved_at") else None
-            memory.add_job(a["uwi"], text, cost=a.get("actual_cost"), start_date=when)
+            memory.add_job(a["uwi"], text, cost=a.get("actual_cost"), start_date=when, vid=f"crew-{a['id']}")
     centroid = (float(wells["surface_latitude"].mean()), float(wells["surface_longitude"].mean()))
 
     def origin(crew_id: str | None) -> tuple[float, float, str]:
@@ -199,7 +199,7 @@ def create_app(wells: pd.DataFrame, overview: dict, memory: notes.WellMemory,
         if len(text) < 3:
             raise HTTPException(422, "describe the work done")
         store.resolve(aid, "; ".join(body.work_done), body.note, body.actual_cost, body.hours, body.lat, body.lon)
-        memory.add_job(a["uwi"], text, cost=body.actual_cost)  # the closed loop: crew notes feed Well Memory
+        memory.add_job(a["uwi"], text, cost=body.actual_cost, vid=f"crew-{aid}")  # the closed loop: crew notes feed Well Memory
         return _decorate([store.get_assignment(aid)])[0]
 
     # --------------------------------------------------------------- pages
@@ -226,7 +226,10 @@ def load_app() -> FastAPI:
     # Only load the trusted artifact produced by the local training pipeline.
     model = joblib.load(config.WORK_DIR / "repair_model.joblib") if "model" in overview else None
     rep = data.add_job_outcomes(data.load_jobs())
-    memory = notes.WellMemory(notes.TfidfEncoder()).build(rep)
+    from . import vectorstore
+
+    index = vectorstore.make_index(config.VECTOR_BACKEND, config.WORK_DIR / "vectors")
+    memory = notes.WellMemory(notes.TfidfEncoder(), index).build(rep)
     config.WORK_DIR.mkdir(parents=True, exist_ok=True)
     pilot = pilot_wells = None
     if (config.WORK_DIR / "pilot.json").exists():

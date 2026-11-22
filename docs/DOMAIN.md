@@ -113,6 +113,10 @@ and "Rod and tubing design for PCP systems", which the Dataset Handbook lists as
   12 months. (3) Fleet rollout if the pilot shows a reduction.
 - **What it takes.** A data engineer part-time to connect the historian and job log feeds, a production engineer
   as champion, company sign-on for the portals, and phones or tablets for crews. Costs were not estimated.
+- **Vector store.** Crew notes live in a vector database (Chroma, embedded and saved to disk). It matches exact search
+  on 99.8% of real queries. At production scale the same interface would sit on Databricks Vector Search or Postgres with
+  pgvector so several servers share one store; exact search stays fast to millions of notes, so an approximate index is
+  only worth it far beyond Strathcona's volume, and only after a recall check.
 - **Scaling and new fields.** Scoring and retraining take minutes on a laptop. A field the model never saw loses
   only 0.01 to 0.02 AUC (Cactus Lake 0.703 vs 0.725, Winter 0.771 vs 0.782, Druid Main 0.748 vs 0.755, Court 0.790
   vs 0.797), so a new field can start from the fleet model. Wells with only 1 to 2 past repairs still score AUC 0.763.
