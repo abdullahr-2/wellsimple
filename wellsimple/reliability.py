@@ -129,3 +129,43 @@ def job_type_pareto(rep_t: pd.DataFrame, min_jobs: int = 150, top: int = 10) -> 
     d = d[d["jobs"] >= min_jobs].sort_values("total_cost", ascending=False).head(top).reset_index()
     d["share_of_cost"] = d["total_cost"] / rep_t["cost"].sum()
     return d
+
+
+def km_median(t, event) -> float | None:
+    """Kaplan-Meier median survival time: the first time the estimated share still running
+    drops to 50% or below. Uses censored observations properly. None if it never does."""
+    t = np.asarray(t, float)
+    e = np.asarray(event, bool)
+    if len(t) == 0:
+        return None
+    order = np.argsort(t, kind="mergesort")
+    t, e = t[order], e[order]
+    at_risk = len(t)
+    surv = 1.0
+    i = 0
+    while i < len(t):
+        j = i
+        while j < len(t) and t[j] == t[i]:
+            j += 1
+        d = int(e[i:j].sum())
+        if d:
+            surv *= 1 - d / at_risk
+            if surv <= 0.5:
+                return float(t[i])
+        at_risk -= j - i
+        i = j
+    return None
+
+
+def concordance_index(t, event, predicted_life) -> float:
+    """Harrell's C for survival: among comparable pairs (the shorter time is an observed event),
+    the share where the model also predicted the shorter life. 0.5 is chance; censoring is handled."""
+    t = np.asarray(t, float)
+    e = np.asarray(event, bool)
+    p = np.asarray(predicted_life, float)
+    ok = np.isfinite(p)
+    t, e, p = t[ok], e[ok], p[ok]
+    shorter = (t[:, None] < t[None, :]) & e[:, None]
+    conc = ((p[:, None] < p[None, :]) & shorter).sum() + 0.5 * ((p[:, None] == p[None, :]) & shorter).sum()
+    n = shorter.sum()
+    return float(conc / n) if n else float("nan")

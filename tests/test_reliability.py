@@ -64,3 +64,23 @@ def test_repeat_spend_counts_only_jobs_after_a_recent_repair():
     assert s["jobs"] == 1 and s["cost"] == 400.0           # only a's second job is within 30 days
     assert abs(s["share_of_jobs"] - 0.25) < 1e-9
     assert rel.repeat_spend(rep, 400)["jobs"] == 2          # a's third job is 141 days after the second
+
+
+def test_km_median_handles_censoring():
+    # no censoring: plain median of 1..9 is 5
+    assert rel.km_median(np.arange(1, 10), np.ones(9, bool)) == 5.0
+    # censoring the short times must not drag the median down the way dropping them would
+    t = np.array([1, 2, 3, 10, 20, 30, 40, 50])
+    e = np.array([0, 0, 0, 1, 1, 1, 1, 1], bool)
+    assert rel.km_median(t, e) == 30.0
+    assert rel.km_median([5, 6], [False, False]) is None
+
+
+def test_concordance_index():
+    t = np.array([10, 20, 30, 40.0])
+    e = np.ones(4, bool)
+    assert rel.concordance_index(t, e, t) == 1.0
+    assert rel.concordance_index(t, e, -t) == 0.0
+    assert rel.concordance_index(t, e, np.ones(4)) == 0.5
+    # a censored short time cannot anchor a comparison, so there is no comparable pair
+    assert np.isnan(rel.concordance_index(np.array([5, 50.0]), np.array([False, True]), np.array([100, 1.0])))
