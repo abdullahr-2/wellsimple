@@ -67,6 +67,12 @@ def create_app(wells: pd.DataFrame, overview: dict, memory: notes.WellMemory,
     wells = wells.copy().reset_index(drop=True)
     by_uwi = {u: i for i, u in enumerate(wells["uwi"])}
     store.ensure_crews(DEMO_CREWS)
+    # crew notes are saved in the store; put them back into Well Memory so they survive a restart
+    for a in store.assignments("resolved"):
+        text = ((a.get("work_done") or "").replace("; ", " ") + " . " + (a.get("crew_note") or "")).strip(" .")
+        if len(text) >= 3:
+            when = pd.Timestamp(a["resolved_at"]).tz_convert(None).normalize() if a.get("resolved_at") else None
+            memory.add_job(a["uwi"], text, cost=a.get("actual_cost"), start_date=when)
     centroid = (float(wells["surface_latitude"].mean()), float(wells["surface_longitude"].mean()))
 
     def origin(crew_id: str | None) -> tuple[float, float, str]:

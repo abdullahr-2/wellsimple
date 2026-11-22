@@ -124,3 +124,13 @@ def test_loss_sort_follows_the_selected_price_scenario():
     c = TestClient(server.create_app(w, {}, _memory(), store_mod.Store()))
     assert uwis(c.get("/api/wells?sort=loss&scenario=low"))[0] == "w1"
     assert uwis(c.get("/api/wells?sort=loss&scenario=mid"))[0] == "w2"
+
+
+def test_crew_notes_survive_a_restart():
+    st = store_mod.Store()
+    st.ensure_crews(server.DEMO_CREWS)
+    aid = st.assign("w3", "crew-1")
+    st.resolve(aid, "Replaced rotor", "rotor chunked, found tar in the clamp area", 5000.0, 4.0, None, None)
+    restarted = TestClient(server.create_app(_wells(), {}, _memory(), st))   # a fresh memory, same saved store
+    d = restarted.get("/api/wells/w1?k=15").json()
+    assert any("tar in the clamp" in p["text"] for p in d["precedents"])
