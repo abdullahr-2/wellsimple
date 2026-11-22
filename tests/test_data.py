@@ -71,3 +71,10 @@ def test_link_failures_to_jobs_window():
     assert len(m) == 2  # well z has no job
     first = m[m["failure_start_date"] == pd.Timestamp("2026-01-08")].iloc[0]
     assert first["lag"] == 2 and first["text"] == "broken p-rod"
+
+
+def test_clean_daily_drops_duplicate_well_days():
+    df = pd.DataFrame({"uwi": ["a", "a", "a"], "production_date": ["2026-10-14", "2026-10-14", "2026-10-15"],
+                       "oil_produced_m3": [1.0, 2.0, 3.0]})
+    out = data.clean_daily(df)
+    assert len(out) == 2 and out["oil_produced_m3"].tolist() == [2.0, 3.0]

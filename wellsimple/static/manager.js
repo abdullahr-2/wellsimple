@@ -16,7 +16,7 @@ async function loadAll() {
   const origin = document.getElementById('origin');
   origin.replaceChildren(el('option', { value: '', text: 'Fleet centre' }),
     ...crews.map(c => el('option', { value: c.id, text: c.name + (c.lat != null ? ' (located)' : ' (no location yet)') })));
-  renderKpis(); renderOverviewCharts(); renderPotential(); renderReliability();
+  renderKpis(); renderOverviewCharts(); renderPotential(); renderReliability(); renderConcentration(); renderQuality(); loadTop10();
 }
 
 function renderKpis() {
@@ -48,7 +48,7 @@ function renderOverviewCharts() {
 }
 
 async function loadWells(rescore = false) {
-  const q = new URLSearchParams({ sort: document.getElementById('sort').value, min_risk: document.getElementById('minrisk').value, limit: 30 });
+  const q = new URLSearchParams({ sort: document.getElementById('sort').value, min_risk: document.getElementById('minrisk').value, limit: 30, scenario: scenario() });
   if (rescore === true) q.set('rescore', 'true');
   const crew = document.getElementById('origin').value; if (crew) q.set('crew_id', crew);
   const r = rescore === true && typeof scoreHostedWells === 'function'
@@ -151,7 +151,7 @@ document.getElementById('runModel').addEventListener('click', async () => {
   } catch (e) { status.textContent = 'Scoring failed. ' + e.message; }
   finally { button.disabled = false; }
 });
-document.getElementById('scenario').addEventListener('change', () => { renderKpis(); loadWells(); loadAssignments('assigned', 'assignedTable', ASSIGNED_COLS); });
+document.getElementById('scenario').addEventListener('change', () => { renderKpis(); loadWells(); loadTop10(); loadAssignments('assigned', 'assignedTable', ASSIGNED_COLS); });
 refresh().catch(e => { document.querySelector('main').prepend(el('div', { class: 'banner', text: 'Could not load data: ' + e.message })); });
 
 function renderReliability() {
@@ -241,4 +241,69 @@ function renderPotential() {
     el('table', {}, el('tr', {}, ...['If repeat repairs fall by', 'Could potentially save per year', 'Basis'].map(t => el('th', { text: t }))),
       ...rows.map(([f, why]) => el('tr', {}, el('td', { text: Math.round(f * 100) + '%' }), el('td', { text: moneyM(d.at(f)) }), el('td', { class: 'muted', text: why })))),
     el('p', { class: 'small muted', text: 'Based on the measured repeat-repair spend (field cost estimates) and the stated scenarios. It is a ceiling-based potential, not a measured saving: some repeats are planned follow-ups, and the 55% figure comes from one uncontrolled published case. The A/B pilot is designed to measure the real number.' }));
+}
+
+// ---- "Act on these 10 first": highest expected loss, with likely component and precedent ----
+async function loadTop10() {
+  const box = document.getElementById('top10');
+  const r = await api('/api/wells?sort=loss&limit=10&scenario=' + scenario());
+  const comp = w => {
+    const c = [['Pump', w.p_pump], ['Rods', w.p_rods], ['Tubing', w.p_tubing]].filter(x => x[1] != null).sort((a, b) => b[1] - a[1]);
+    return c.length ? c[0][0] + ' ' + pct(c[0][1]) : '–';
+  };
+  box.replaceChildren(
+    el('h3', { style: 'margin-top:0', text: 'Act on these 10 first' }),
+    el('p', { class: 'small muted', text: 'Highest expected 30-day loss (' + (scenario() === 'low' ? 'conservative' : 'mid') + ' oil price). Likely component comes from sensors alone; the last column is how long similar past repairs lasted.' }),
+    el('div', { style: 'overflow-x:auto' }, el('table', {},
+      el('tr', {}, ...['#', 'Well', 'Field', 'Risk (30 d)', 'Expected loss', 'Likely component', 'Similar fixes lasted', 'Why flagged'].map(t => el('th', { text: t }))),
+      ...r.wells.map((w, i) => el('tr', { class: 'clickable', onclick: () => { document.querySelector('[data-tab=wells]').click(); showDetail(w); } },
+        el('td', { text: String(i + 1) }), el('td', { text: w.well_name || w.uwi }), el('td', { text: w.field_operating_area || '' }),
+        el('td', {}, riskPill(w.p_repair)), el('td', { text: money(w[lossKey()]) }), el('td', { text: comp(w) }),
+        el('td', { text: w.precedent_life_days == null ? '–' : num(w.precedent_life_days) + ' days' }),
+        el('td', { class: 'small', text: w.reasons || 'general risk' }))))));
+}
+
+// ---- the killer chart: repair work is concentrated on a few wells ----
+function renderConcentration() {
+  const c = S.overview.concentration, box = document.getElementById('concentration');
+  if (!c) { box.replaceChildren(); return; }
+  const a = c.all_repairs, canvas = el('canvas');
+  box.replaceChildren(
+    el('h3', { style: 'margin-top:0', text: 'The worst 10% of wells take ' + pct(a.top10_share) + ' of all repair jobs' }),
+    el('p', { class: 'small muted', text: 'Share of repair jobs (rod truck and workover, 2021 to 2026) taken by the worst wells. The dashed line is what an even spread would look like. Rod truck jobs alone: ' + pct(c.rod_truck.top10_share) + '.' }),
+    el('div', { style: 'position:relative;height:240px' }, canvas));
+  S.charts.push(new Chart(canvas, { type: 'line',
+    data: { labels: a.points.map(p => p.wells_pct + '%'), datasets: [
+      { label: 'Share of repair jobs', data: a.points.map(p => p.jobs_pct * 100), borderColor: '#c2410c', backgroundColor: '#c2410c22', fill: true, pointRadius: 0 },
+      { label: 'Even spread', data: a.points.map(p => p.wells_pct), borderColor: '#94a3b8', borderDash: [6, 6], pointRadius: 0 }] },
+    options: { maintainAspectRatio: false, scales: { x: { title: { display: true, text: 'Worst wells (share of wells with repairs)' }, ticks: { maxTicksLimit: 10 } },
+      y: { title: { display: true, text: '% of repair jobs' }, max: 100 } } } }));
+}
+
+// ---- model quality: held-out accuracy, baselines, calibration, new field ----
+function renderQuality() {
+  const q = S.overview.model_quality, box = document.getElementById('quality');
+  if (!q) { box.replaceChildren(); return; }
+  const canvas = el('canvas'), f3 = v => v.toFixed(3);
+  const row = (...c) => el('tr', {}, ...c.map(x => el('td', { text: x })));
+  const few = q.cold_start['1 to 2 previous repairs'];
+  box.replaceChildren(
+    el('h3', { style: 'margin-top:0', text: 'Can you trust the risk score?' }),
+    el('p', { class: 'small', text: 'Tested on ' + num(q.test_rows) + ' well-weeks from ' + q.cutoff + ' on, trained only on earlier data.' }),
+    el('table', {}, el('tr', {}, ...['Method', 'Accuracy (AUC)', 'Top 5% that needed a repair'].map(t => el('th', { text: t }))),
+      row('WellSimple model', f3(q.model.auc) + ' (' + f3(q.model.ci.auc[0]) + ' to ' + f3(q.model.ci.auc[1]) + ')', pct(q.model.precision_top5)),
+      row('Each well’s own repair history', f3(q.baselines.well_history.auc), pct(q.baselines.well_history.precision_top5)),
+      row('Field average', f3(q.baselines.field_average.auc), pct(q.baselines.field_average.precision_top5)),
+      row('Picking wells at random', '0.500', pct(q.base_rate))),
+    el('h4', { text: 'Calibration: when it says 40%, about 40% need a repair' }),
+    el('div', { style: 'position:relative;height:200px' }, canvas),
+    el('p', { class: 'small muted', text: 'New field (model trained without it), AUC unseen vs seen: ' +
+      Object.entries(q.new_field).map(([k, v]) => k + ' ' + f3(v.auc_unseen_field) + ' vs ' + f3(v.auc_seen_field)).join(', ') +
+      '. Wells with only 1 to 2 past repairs: AUC ' + (few ? f3(few.auc) : '–') + '.' }));
+  const pts = q.calibration.map(b => ({ x: b.predicted * 100, y: b.observed * 100 }));
+  S.charts.push(new Chart(canvas, { type: 'scatter',
+    data: { datasets: [{ label: 'Observed vs predicted (tenths of wells)', data: pts, backgroundColor: '#0b6e4f' },
+      { label: 'Perfect calibration', type: 'line', data: [{ x: 0, y: 0 }, { x: 50, y: 50 }], borderColor: '#94a3b8', borderDash: [6, 6], pointRadius: 0 }] },
+    options: { maintainAspectRatio: false, scales: { x: { type: 'linear', title: { display: true, text: 'Predicted chance (%)' }, min: 0, max: 50 },
+      y: { title: { display: true, text: 'Observed (%)' }, min: 0, max: 50 } } } }));
 }

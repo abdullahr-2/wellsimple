@@ -5,7 +5,10 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingClassifier
 
-from . import risk
+from . import physics, risk
+
+# risk model inputs: sensor trends, repair history and the PCP physics features
+MODEL_FEATURES = risk.SENSOR_FEATURES + risk.HISTORY_FEATURES + physics.PHYSICS_FEATURES
 
 M3_TO_BBL = 6.2898
 
@@ -29,6 +32,8 @@ REASON_LABELS = {
     "repairs_90d": ("Repaired recently (repeat risk)", 1),
     "repairs_365d": ("Frequent repairs this year", 1),
     "days_since_repair": ("Long time since last repair", 1),
+    "fatigue_since_repair": ("Many loaded pump revolutions since last repair", 1),
+    "torque_spike": ("Torque spikes", 1),
 }
 
 
@@ -45,7 +50,7 @@ def mean_repair_cost(costs: pd.Series, cap_quantile: float = 0.99) -> float:
 
 
 def fit_model(snapshots: pd.DataFrame) -> HistGradientBoostingClassifier:
-    feats = risk.SENSOR_FEATURES + risk.HISTORY_FEATURES
+    feats = MODEL_FEATURES
     m = HistGradientBoostingClassifier(max_depth=4, learning_rate=0.06, max_iter=250, random_state=0)
     return m.fit(snapshots[feats], snapshots["label"])
 

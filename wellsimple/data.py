@@ -4,6 +4,7 @@ Cleaning rules come from checks run on the data:
  - pressure placeholders such as 999999 are set to missing
  - torque, motor current and pump efficiency have impossible spikes, set to missing
  - job costs of zero or less are set to missing (about 16% of rod/workover jobs)
+ - duplicate well-day rows are dropped (one row per well per day)
  - the failure log is almost entirely 2025-2026, so outcome analysis for earlier
    years must use the job log, not the failure table
 """
@@ -41,6 +42,9 @@ def clean_daily(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     if "production_date" in df:
         df["production_date"] = pd.to_datetime(df["production_date"])
+    if {"uwi", "production_date"} <= set(df.columns):
+        # the raw file repeats some well-days (58 rows on 2 wells in Oct 2026); keep one row per well per day
+        df = df.drop_duplicates(["uwi", "production_date"], keep="last").reset_index(drop=True)
     for c in SENSOR_COLS:
         if c in df:
             df[c] = pd.to_numeric(df[c], errors="coerce").astype("float64")

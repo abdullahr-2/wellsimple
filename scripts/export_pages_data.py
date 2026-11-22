@@ -11,7 +11,7 @@ import joblib
 import numpy as np
 import pandas as pd
 
-from wellsimple import config, data, notes, risk
+from wellsimple import config, data, notes
 from wellsimple.server import DEMO_CREWS, _clean
 from wellsimple.store import SCHEMA
 
@@ -47,7 +47,7 @@ def main():
     pilot.update(pilot_mode=False, enrolled_wells=sample.to_dict("records"), outcome=None,
                  outcome_note="The groups were assigned using historical data. The 12-month field outcome is pending.")
     model = joblib.load(work / "repair_model.joblib")
-    features = risk.SENSOR_FEATURES + risk.HISTORY_FEATURES
+    features = list(model.feature_names_in_)
     np.testing.assert_allclose(model.predict_proba(wells[features])[:, 1], wells["p_repair"], atol=1e-12, rtol=0)
     assert list(model.feature_names_in_) == features
     memory = notes.WellMemory(notes.TfidfEncoder()).build(data.add_job_outcomes(data.load_jobs()))

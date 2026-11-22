@@ -25,9 +25,24 @@ almost six years.
 
 | Question | Test | Result |
 |---|---|---|
-| Which wells will need a repair in the next 30 days? | Train to Jun 2025, test Jul 2025 onward | AUC 0.816. Of the top 5% flagged wells, 49.5% needed a repair, against a 12.3% base rate (4.0x). History alone: AUC 0.758. Recent repairs only: 0.685. |
-| How long will a fix last? | 2026 jobs, retrieving only earlier jobs on other wells | Error (log-days) 0.978 vs 1.150 for the global median. Rank correlation 0.376, against 0.109 for the well's own history. |
+| Which wells will need a repair in the next 30 days? | Train to Jun 2025, test Jul 2025 onward (85,057 well-weeks) | AUC **0.818 (95% CI 0.808 to 0.826)**, against 0.716 for each well's own repair history and 0.678 for the field average. Of the top 5% flagged, 48.6% needed a repair (CI 45.1% to 52.1%) against a 12.3% base rate. Well calibrated: predicted 42% came true 43% of the time, 27% came true 28%. A field the model never saw loses only 0.01 to 0.02 AUC. Sensors lift it from 0.758 (history alone) to 0.818. |
+| How long will a fix last? | Every 2026 repair job, including the 35% still running (Kaplan-Meier, strict timing) | Concordance **0.693** (CI 0.675 to 0.708) from the crew note, against 0.584 from sensors, 0.575 for the field average and 0.566 for the well's own history. Calibrated: predicted 23 / 38 / 55 / 98 / 224 days, actual 20 / 31 / 55 / 83 / 226. |
 | What will the crew find? | 2026 failures; retrieved notes scored against the real note | Lift over random notes +0.067 (95% CI 0.062 to 0.073). Restricted to notes from other fields: +0.070 (0.064 to 0.075), so it is not one field's writing style. Component AUC: pump 0.76, rods 0.76, tubing 0.69. |
+
+**Each data source wins its own question.** Sensors answer *when* a well will need a repair (risk
+model); the crew's own note answers *how long* a fix will last (adding sensors to the note did not
+help: 0.688 vs 0.693). We report that rather than force sensors into both.
+
+**PCP physics, tested against what crews found** (full detail in [docs/DOMAIN.md](docs/DOMAIN.md)). The
+recorded efficiency is the pump's volumetric efficiency (actual / displacement x RPM; 72% of well-days
+agree within 0.02). Physics features (efficiency drop rate, torque spikes, torque per unit displacement,
+revolutions and a Miner's-rule fatigue index since the last repair) add AUC +0.0022 (CI +0.0006 to
++0.0037). Checking the textbook reading of sensor signatures against 13,462 crew notes: gas interference
+is confirmed (crews mention gas 3.6 times as often, CI 2.1 to 6.2) and stator wear weakly (1.07x), while
+the sand, rod-fatigue and dry-running signatures are not, so the portal calls them "unusual signals", not
+causes. Rod breaks are not early failures (35% within 30 days of the previous repair, the same as all repairs).
+
+**Repairs are concentrated.** The worst 10% of wells take 35% of all repair jobs (34% of rod-truck jobs).
 
 **Do fixes last? Not for long, and that changes the strategy.** Fitting a Weibull model to the time
 between repair jobs (right-censored at the end of the data) gives a shape of k = 0.61 (95% CI 0.60 to
@@ -99,7 +114,9 @@ randomizes real wells, and the manager portal's **A/B pilot** tab shows the plan
   practice). Assignment is random within field and baseline-repeat strata with a fixed seed (2026).
   Setting `PILOT_MODE=1` hides control wells from the manager list so the experiment is not contaminated.
 - **Balance:** standardized differences at enrollment are -0.10 for baseline repeats, -0.13 for prior-year
-  repeats, -0.01 for repairs in 12 months and +0.09 for oil rate. Prior-year repeats exceed the 0.10 balance threshold.
+  repeats, -0.01 for repairs in 12 months and +0.09 for oil rate. Prior-year repeats are slightly over the usual
+  0.1 guide (the system arm has a little less history of repeats), so the read at 12 months should also be
+  reported adjusted for baseline repeats.
 - **Pre-specified analysis:** primary outcome is repeat repairs per well over 12 months; rate ratio with a
   permutation p-value and a bootstrap interval; one read at 12 months, no peeking.
 - **The test is validated on real history (A/A check):** randomizing 404 real repeat-prone wells 200 times
@@ -196,8 +213,11 @@ not running: keep that window open, and try `http://127.0.0.1:8000/` instead.
 3. Open the manager portal at <http://localhost:8000/> and the crew portal at
    <http://localhost:8000/crew> (use a phone on the same network for the real mobile view).
 
-Evaluation scripts (time-ordered backtests): `python scripts/eval_risk.py`,
-`python scripts/eval_precedent.py`. Tests: `python -m pytest`.
+**Rerun everything with one command:** `python scripts/run_all.py` runs the tests, builds the tables and the
+pilot, and runs every evaluation (about 8 to 10 minutes on a laptop), saving each report to `WORK_DIR/reports/`.
+Individual evaluations: `eval_risk.py`, `explain_risk.py`, `eval_physics.py`, `eval_precedent.py`,
+`eval_crossmodal.py`, `eval_savings_levers.py`, `trial_power.py`, `compare_models.py` (needs the optional
+`xgboost` and `lightgbm`). Tests: `python -m pytest`.
 
 The local app has no login. Assignments and crew submissions made in it are
 demo inputs, not field records.
@@ -208,13 +228,21 @@ demo inputs, not field records.
 - `wellsimple/data.py`: cleaning (sensor placeholders and spikes removed), failure-to-job linking
   (98.5% of failures link to a repair job), repair outcomes (days to the next repair job).
 - `wellsimple/risk.py`: weekly snapshots of each producing well, 30-day and 7-day sensor
-  features, repair history, forward 30-day label; gradient-boosted trees.
+  features, repair history, forward 30-day label; gradient-boosted trees. On the same held-out split, scikit-learn
+  boosting (AUC 0.816), XGBoost (0.817) and LightGBM (0.816) are indistinguishable, and logistic regression
+  is lower (0.785), so we kept scikit-learn (no extra dependency, handles missing values natively); see
+  `scripts/compare_models.py`.
+- `wellsimple/physics.py`: PCP physics features (volumetric efficiency trend, speed variability, torque spikes,
+  torque per unit displacement, revolutions and a fatigue index since the last repair). See docs/DOMAIN.md.
+- `wellsimple/evaluation.py`: held-out report for the risk model (baselines, well-resampled intervals,
+  calibration, cold start, unseen field), shown in the manager portal.
 - `wellsimple/notes.py`: "Well Memory", nearest-neighbour retrieval over repair-job notes
   (TF-IDF with SVD) with outcome statistics. Every answer is computed from real past jobs.
 - `wellsimple/crossmodal.py`: a random forest maps pre-failure sensor features into the crew-note
   text space and returns the nearest real notes and a likely component.
 - `wellsimple/reliability.py`: censored Weibull fit of repair lifetimes, empirical hazard, the
-  age-replacement test (Barlow-Proschan) and a job-type cost Pareto.
+  age-replacement test (Barlow-Proschan), a job-type cost Pareto, Kaplan-Meier medians and the
+  concordance index.
 - `wellsimple/levers.py`: tests of candidate savings sources (pump-make rate ratios with field and
   well controls, cluster bootstrap intervals). `scripts/trial_power.py`: data-calibrated trial design.
 - `wellsimple/abtest.py`: pilot enrollment, stratified randomization, balance check, the pre-specified analysis
@@ -224,13 +252,14 @@ demo inputs, not field records.
 
 **Validation**: all splits are time-ordered; the retrieval tests exclude the failing well, and the
 cross-modal test also excludes the failing well's field; history and label logic has unit tests
-(`python -m pytest`, 36 tests, including recovery of known Weibull and rate-ratio parameters, a test that field controls remove a false make effect, an A/A false-positive test and detection of a known effect in the A/B analysis). Both portals were exercised in a headless browser.
+(`python -m pytest`, 47 tests, including recovery of known Weibull and rate-ratio parameters, a test that field controls remove a false make effect, an A/A false-positive test and detection of a known effect in the A/B analysis). Both portals were exercised in a headless browser.
 
-**External resources**: Strathcona Resources Q3 2026 results release (price and cost assumptions),
+**External resources**: Strathcona Resources Q3 2026 results release (price and cost assumptions), the JPT
+articles cited in docs/DOMAIN.md,
 OpenStreetMap tiles, Leaflet 1.9.4 and Chart.js 4.4.1 (loaded from CDNs).
 
 **AI disclosure**
-- Claude Code (Claude Sonnet 5.5) wrote and reviewed much of the code and tests under the team's
+- Claude Code (Claude Sonnet 5.5, later Claude Opus 5.5) wrote and reviewed much of the code and tests under the team's
   direction, and drafted analysis scripts. Commits it co-authored carry a `Co-Authored-By` line.
 - No generative model creates or extracts any content shown in the product. Retrieval and
   statistics only.
