@@ -21,7 +21,10 @@ and you get its **expected loss**. / That's what ranks the manager's list.
 Crew notes do something sensors **can't**: / they're the **best predictor of how long a repair will last**, /
 zero point six nine versus zero point five eight from sensors. //
 For every well we show **real past jobs**, / what they cost / and how long they held. //
-**Nothing is generated**, / and the matching works even **across fields**, / so it isn't just copying one area's writing style. //
+Every note is stored as a **vector**, / so a search finds the closest past jobs in **milliseconds**, /
+and on Databricks that's **Vector Search**, / matching an exact search **ninety-nine percent** of the time. //
+We **tested** a language model and **chose not to use one**: / **nothing is generated**, / so every note is a real crew's words. /
+And the matching works even **across fields**, / so it isn't just copying one area's writing style. //
 And it's a **closed loop**: / every note a crew submits / becomes a past job the **next crew** can find. //
 Abdullah will show you why you can trust it.
 
@@ -66,6 +69,7 @@ The potential is **one point seven to nine point one million dollars a year**. /
 - **Higher precision elsewhere?** Different targets. Ours is any repair visit in 30 days incl. scheduled work; it beats a well's own history (0.72) and field average (0.68), and it's calibrated.
 - **Why not recommend a fix like a new rod string?** Our most repair-prone wells are closest to constant risk, which points to redesign, and we surface them. We didn't claim a causal saving from history; that's why the pilot.
 - **$13.9M and $1.7M–$9.1M?** Field-estimated cost of repairs within 30 days of a previous one, plus $2.6M lost oil, × 10%–55%. Scenarios; the pilot measures the real figure.
+- **What tech is behind it?** Risk model: gradient-boosted trees (XGBoost and LightGBM scored the same, 0.82; logistic regression 0.785). Notes: vectors in Chroma locally and Databricks Vector Search (99% agreement with exact search). Sensors to notes: a random forest. No generative language model: we tested MiniLM and the simpler method did better (0.376 vs 0.337).
 - **What's 0.69?** Pick two repairs: 69% of the time it says correctly which lasts longer. Coin flip = 50%.
 - **Small improvements?** 96% power at a 50% cut, only about a quarter at 20%. Smaller needs more wells or time.
 - **Blank?** "Good question. The short answer is [one fact], and the method's in our repo."
