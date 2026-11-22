@@ -10,6 +10,10 @@ DAILY = DATA_DIR / "daily_production.parquet"
 JOBS = DATA_DIR / "well_jobs.parquet"
 FAILURES = DATA_DIR / "production_failures.parquet"
 
+# Vector store for Well Memory: "chroma" (embedded vector database persisted in WORK_DIR/vectors)
+# or "memory" (exact in-memory search, no extra dependency)
+VECTOR_BACKEND = os.environ.get("VECTOR_BACKEND", "chroma")
+
 # Failures in the log are essentially all in 2025-2026, so time splits live there.
 TRAIN_END = "2026-01-01"
 

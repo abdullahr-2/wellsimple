@@ -4,7 +4,7 @@ A two-portal system that turns field crew knowledge and well sensor data into re
 
 - **Manager portal:** overview dashboard, ranked at-risk wells with reasons, job assignment, resolved wells.
 - **Crew portal (mobile-first):** assigned wells, precedent cases and diagnosis notes, map with the well and the crew's location, and a quick way to log what was done.
-- **Well Memory:** every crew note is stored as a vector alongside the sensor behavior before the job and the outcome after it, so each new failure can retrieve what worked before.
+- **Well Memory:** every repair note (13,854 from the job log, plus each note a crew submits) is stored as a vector with the outcome of that job (cost, how long the fix lasted) in **Chroma**, an embedded vector database saved to disk, and searched by cosine similarity with filters (earlier jobs only, other wells only). A separate model links pre-failure sensor behavior to the notes. See "Vector database and scalability" below.
 
 Competition: DSMLC Canary x Chirality 2026 Datathon, Strathcona Resources case.
 
@@ -50,7 +50,11 @@ between repair jobs (right-censored at the end of the data) gives a shape of k =
 and falls with time: rod-truck jobs are about 10 times likelier to need another visit in the first
 week (3.0% per day) than 6 to 12 months later (0.28% per day). Classic age-based replacement only
 pays when k is above 1, so scheduled replacement of running equipment would not pay here; the saving
-is in making each repair last. By crew job type, rod repairs repeat within 30 days 44% to 50% of the
+is in making each repair last. This is not just bad wells failing first: within groups of similarly
+repair-prone wells k is 0.62 to 0.79, and comparing each well with itself k = 0.71 (95% CI 0.70 to 0.73)
+(`scripts/eval_reliability.py`). Likely causes are the root cause not being fixed, installation problems
+and new parts settling in. What pays: getting the repair right, watching wells closely in the first weeks
+after a repair, and redesigning the chronic wells (the 21+ repair wells are closest to constant risk, k = 0.79). By crew job type, rod repairs repeat within 30 days 44% to 50% of the
 time (median fix lasts 31 to 38 days), against 14% to 20% for pump replacement (median 114 to 134 days).
 Caveat: the next job on a well can be a planned follow-up visit, so some early risk is return trips.
 
@@ -160,6 +164,27 @@ the reduction. Applying a reduction in all PCP failures to the 30-day repeat poo
 | 50% (pilot's detectable size) | $6.9M | $1.3M | $8.3M |
 | 55% (Chad PCP benchmark) | $7.6M | $1.4M | $9.1M |
 
+## Vector database and scalability
+
+Well Memory runs on **Chroma**, an embedded vector database stored in `WORK_DIR/vectors`. It needs no server, keeps
+the index between restarts (startup drops from about 13 s to 8 s once built) and stores crew notes permanently.
+`VECTOR_BACKEND=memory` switches to exact in-memory search, and the app falls back to it automatically if Chroma is not
+installed. Backtests always use exact search so their numbers are exact. Measured in `scripts/bench_vector_search.py`:
+
+| Test | Exact search | Chroma |
+|---|---|---|
+| Real notes (13,854): same top 10 as exact search, with the app's filters | reference | **99.8%** over 299 real queries |
+| Real notes: time per search | 5 ms | 31 ms |
+| 100,000 random vectors with filters (speed test) | 4 ms, exact | 286 ms, 59% recall |
+| 500,000 random vectors with filters (speed test) | 18 ms, exact | 1.7 s, 30% recall |
+
+What this means for scaling. At Strathcona's pace (about 2,400 notes a year) exact search stays in the milliseconds for
+centuries of notes, so speed is not the bottleneck. Approximate vector indexes like Chroma's pay off at tens of millions
+of vectors, and with filters they need tuning and a recall check (on random vectors, the hardest case, raising Chroma's
+search effort did not lift recall). The database's real value here is durability and sharing: in production the same
+interface would sit on Databricks Vector Search or Postgres with pgvector, so several app servers share one store,
+with exact or tuned search chosen by measured recall.
+
 ## Limitations (stated up front)
 
 - The failure log covers about 22 months (2025 to 2026) even though the handbook range is longer.
@@ -236,6 +261,8 @@ demo inputs, not field records.
   torque per unit displacement, revolutions and a fatigue index since the last repair). See docs/DOMAIN.md.
 - `wellsimple/evaluation.py`: held-out report for the risk model (baselines, well-resampled intervals,
   calibration, cold start, unseen field), shown in the manager portal.
+- `wellsimple/vectorstore.py`: the vector store interface with two backends (exact in-memory search and the Chroma
+  vector database), the same filters on both; `scripts/bench_vector_search.py` checks they agree and benchmarks them.
 - `wellsimple/notes.py`: "Well Memory", nearest-neighbour retrieval over repair-job notes
   (TF-IDF with SVD) with outcome statistics. Every answer is computed from real past jobs.
 - `wellsimple/crossmodal.py`: a random forest maps pre-failure sensor features into the crew-note
@@ -252,7 +279,7 @@ demo inputs, not field records.
 
 **Validation**: all splits are time-ordered; the retrieval tests exclude the failing well, and the
 cross-modal test also excludes the failing well's field; history and label logic has unit tests
-(`python -m pytest`, 47 tests, including recovery of known Weibull and rate-ratio parameters, a test that field controls remove a false make effect, an A/A false-positive test and detection of a known effect in the A/B analysis). Both portals were exercised in a headless browser.
+(`python -m pytest`, 53 tests, including recovery of known Weibull and rate-ratio parameters, a test that field controls remove a false make effect, an A/A false-positive test and detection of a known effect in the A/B analysis). Both portals were exercised in a headless browser.
 
 **External resources**: Strathcona Resources Q3 2026 results release (price and cost assumptions), the JPT
 articles cited in docs/DOMAIN.md,
