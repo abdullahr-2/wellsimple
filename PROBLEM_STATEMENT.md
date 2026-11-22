@@ -1,6 +1,6 @@
 # WellSimple: Fewer Repeat Repairs on Heavy Oil Wells
 
-**Team:** [Name 1 – Electrical Engineering], [Name 2 – Computer Science / Software Engineering], [Name 3 – Data Science]
+**Team:** [Hassaan Muhammad – Electrical Engineering], [Abdullah Rashid – Computer Science / Software Engineering], [Uzair Harris – Data Science]
 **Competition:** DSMLC Canary x Chirality 2026 Datathon – Strathcona Resources case
 **Theme:** Optimization (Maintenance and Reliability, Cost and Resources, Monitoring and Decisions)
 **Solution form:** Prototype AI/ML application: a manager portal and a mobile crew portal
