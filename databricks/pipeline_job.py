@@ -30,6 +30,8 @@ def main():
     # optional: refresh the app's read-only tables (facts, wells, terms) in this schema after a run.
     # Off by default because it writes to the app's schema; app_state (assignments, notes) is never touched.
     ap.add_argument("--publish-app-schema", default="", help="e.g. workspace.wellsimple")
+    ap.add_argument("--vector-index", default="workspace.wellsimple_pipeline.repair_notes_index",
+                    help="Databricks Vector Search index to re-sync after the notes table is rewritten")
     args = ap.parse_args()
     ROOT = Path(args.root) if args.root else Path(globals().get("__file__", ".")).resolve().parents[1]
     raw = f"/Volumes/{args.catalog}/{args.schema}/raw"
@@ -104,6 +106,17 @@ def main():
             spark.sql(f"CREATE OR REPLACE TABLE {args.publish_app_schema}.{name} AS SELECT * FROM {fq('app_' + name)}")
             print(f"refreshed {args.publish_app_schema}.{name} from {fq('app_' + name)}")
         counts["published_to"] = args.publish_app_schema
+
+    # keep Databricks Vector Search in step with the notes table (skipped if the index does not exist yet)
+    try:
+        from databricks.sdk import WorkspaceClient
+
+        WorkspaceClient().vector_search_indexes.sync_index(args.vector_index)
+        counts["vector_index_sync"] = "triggered"
+        print(f"triggered sync of {args.vector_index}")
+    except Exception as e:  # the pipeline's tables are already published; a missing index is not a failure
+        counts["vector_index_sync"] = f"skipped: {type(e).__name__}"
+        print(f"vector index sync skipped: {e}")
 
     run = pd.DataFrame([{"finished_at": pd.Timestamp.now(tz="UTC").isoformat(), "seconds": round(time.time() - t0, 1),
                          "row_counts": json.dumps(counts)}])

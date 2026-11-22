@@ -60,6 +60,18 @@ in `databricks.yml`. After publishing its own tables, the job then runs
 schema; the app owner turns it on. The manual export, `prepare_databricks_data.py` and `import_databricks_data.py`
 steps are then no longer needed.
 
+## Databricks Vector Search
+
+`python scripts/setup_vector_search.py --profile <profile>` creates (or reuses) the endpoint `wellsimple-vs` and the
+index `workspace.wellsimple_pipeline.repair_notes_index`, a Delta Sync index on `gold_repair_notes` using the pipeline's
+own 100-dimension note vectors (so it matches the app's encoder). First setup took about 16 minutes, most of it
+endpoint provisioning. Every pipeline run triggers a sync, so the index follows the notes table.
+
+Does it return the same precedents as exact search? `scripts/check_vector_search.py` queries it with 300 real notes and
+the app's filters (earlier jobs only, other wells only), using the stored vectors on both sides: **recall@10 99.2%**
+(one query matched only 4 of 10), median 154 ms per query including the network round trip from a laptop. Chroma, the
+local vector database, scored 99.8% on the same kind of test.
+
 ## Deploying and running the pipeline
 
 Prerequisites: the Databricks CLI, a profile for the workspace, and the three parquet files in the `raw` volume.

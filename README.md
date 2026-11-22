@@ -178,6 +178,9 @@ installed. Backtests always use exact search so their numbers are exact. Measure
 | 100,000 random vectors with filters (speed test) | 4 ms, exact | 286 ms, 59% recall |
 | 500,000 random vectors with filters (speed test) | 18 ms, exact | 1.7 s, 30% recall |
 
+On Databricks the notes are also indexed in **Databricks Vector Search** (endpoint `wellsimple-vs`), which matches
+exact search on 99.2% of 300 real filtered queries (`scripts/check_vector_search.py`; see docs/DATABRICKS.md).
+
 What this means for scaling. At Strathcona's pace (about 2,400 notes a year) exact search stays in the milliseconds for
 centuries of notes, so speed is not the bottleneck. Approximate vector indexes like Chroma's pay off at tens of millions
 of vectors, and with filters they need tuning and a recall check (on random vectors, the hardest case, raising Chroma's
