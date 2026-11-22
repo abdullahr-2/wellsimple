@@ -1,0 +1,38 @@
+# Databricks Asset Bundle for the WellSimple pipeline.
+# Deploy:  databricks bundle deploy --profile <your-profile>
+# Run:     databricks bundle run wellsimple_pipeline --profile <your-profile>
+# Prerequisite: the three competition parquet files in /Volumes/workspace/wellsimple_pipeline/raw/
+# (see docs/DATABRICKS.md). The dataset itself is never part of the bundle.
+bundle:
+  name: wellsimple
+
+sync:
+  exclude:
+    - "data/**"
+    - "artifacts/**"
+    - "dist-pages/**"
+    - "*.parquet"
+
+resources:
+  jobs:
+    wellsimple_pipeline:
+      name: wellsimple-pipeline
+      description: Score every producing well, enroll the A/B pilot and publish Delta tables for the app and Vector Search.
+      tasks:
+        - task_key: build
+          spark_python_task:
+            python_file: ./databricks/pipeline_job.py
+            parameters: ["--root", "${workspace.file_path}", "--catalog", "workspace", "--schema", "wellsimple_pipeline"]
+          environment_key: default
+      environments:
+        - environment_key: default
+          spec:
+            # Serverless environment 4 already ships compatible pandas 2.2, numpy 2.1, pyarrow 19,
+            # scikit-learn 1.6, scipy 1.15 and joblib 1.4. Installing our own versions on top of an
+            # older environment broke numpy for scipy and scikit-learn, so nothing extra is installed.
+            client: "4"
+
+targets:
+  dev:
+    default: true
+    mode: development

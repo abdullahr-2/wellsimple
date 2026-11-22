@@ -25,3 +25,6 @@ __pycache__/
 *.db
 dist-pages/
 .wrangler/
+
+# Databricks bundle state
+.databricks/
