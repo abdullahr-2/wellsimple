@@ -22,7 +22,10 @@ resources:
         - task_key: build
           spark_python_task:
             python_file: ./databricks/pipeline_job.py
-            parameters: ["--root", "${workspace.file_path}", "--catalog", "workspace", "--schema", "wellsimple_pipeline"]
+            # --publish-app-schema: after each run, refresh the app's facts/wells/terms from the pipeline
+            # (app_state is never touched). Turned on by the app owner on 2026-11-21.
+            parameters: ["--root", "${workspace.file_path}", "--catalog", "workspace", "--schema", "wellsimple_pipeline",
+                         "--publish-app-schema", "workspace.wellsimple"]
           environment_key: default
       environments:
         - environment_key: default

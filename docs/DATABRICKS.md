@@ -56,8 +56,8 @@ It compares wells, pilot arms, risk scores, facts keys, model shape and vocabula
 To let every pipeline run refresh the app, add `"--publish-app-schema", "workspace.wellsimple"` to the job parameters
 in `databricks.yml`. After publishing its own tables, the job then runs
 `CREATE OR REPLACE TABLE workspace.wellsimple.{facts,wells,terms} AS SELECT * FROM workspace.wellsimple_pipeline.app_*`.
-`app_state` (assignments and crew notes) is never touched. This is off by default because it writes to the app's
-schema; the app owner turns it on. The manual export, `prepare_databricks_data.py` and `import_databricks_data.py`
+`app_state` (assignments and crew notes) is never touched. The app owner turned this on on 2026-11-21, so every pipeline run now
+refreshes the app. The manual export, `prepare_databricks_data.py` and `import_databricks_data.py`
 steps are then no longer needed.
 
 ## Databricks Vector Search
@@ -71,6 +71,19 @@ Does it return the same precedents as exact search? `scripts/check_vector_search
 the app's filters (earlier jobs only, other wells only), using the stored vectors on both sides: **recall@10 99.2%**
 (one query matched only 4 of 10), median 154 ms per query including the network round trip from a laptop. Chroma, the
 local vector database, scored 99.8% on the same kind of test.
+
+### Backups and rollback
+
+Before the first refresh, the app's previous tables were copied to `workspace.wellsimple.backup_facts_20261121`,
+`backup_wells_20261121` and `backup_terms_20261121` (254, 1,336 and 4,848 rows). To roll back:
+
+```sql
+CREATE OR REPLACE TABLE workspace.wellsimple.facts AS SELECT * FROM workspace.wellsimple.backup_facts_20261121;
+CREATE OR REPLACE TABLE workspace.wellsimple.wells AS SELECT * FROM workspace.wellsimple.backup_wells_20261121;
+CREATE OR REPLACE TABLE workspace.wellsimple.terms AS SELECT * FROM workspace.wellsimple.backup_terms_20261121;
+```
+
+and remove `--publish-app-schema` from `databricks.yml` so the next run does not overwrite them again.
 
 ## Deploying and running the pipeline
 
