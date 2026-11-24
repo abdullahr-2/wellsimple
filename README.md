@@ -6,13 +6,14 @@ A two-portal system that turns field crew knowledge and well sensor data into re
 - **Crew portal (mobile-first):** assigned wells, precedent cases and diagnosis notes, map with the well and the crew's location, and a quick way to log what was done.
 - **Well Memory:** every repair note (13,854 from the job log, plus each note a crew submits) is stored as a vector with the outcome of that job (cost, how long the fix lasted) in **Chroma**, an embedded vector database saved to disk, and searched by cosine similarity with filters (earlier jobs only, other wells only). A separate model links pre-failure sensor behavior to the notes. See "Vector database and scalability" below.
 
-Competition: DSMLC Canary x Chirality 2026 Datathon, Strathcona Resources case.
+**Finalist** at the DSMLC Canary x Chirality 2026 Datathon, for the Strathcona Resources case.
 
-**Team:** TBD (add member names here)
+**Team:** Abdullah Rashid, Hassaan Muhammad, and Uzair Haris
 **Research question and motivation:** see [PROBLEM_STATEMENT.md](PROBLEM_STATEMENT.md)
 **Solution form:** prototype AI/ML application
 **Slides:** https://www.canva.com/design/DAHbnTawanU/qvB8aHGXQ83KIqfmewKOVA
 **Video:**  https://youtu.be/rk2eHiXGtqk
+
 ## Summary of findings
 
 Every number below is produced by a script in this repo (`scripts/`) and uses time-ordered
